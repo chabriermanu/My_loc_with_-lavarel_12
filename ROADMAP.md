@@ -1,4 +1,4 @@
-# ��� MyLoc 2.0 - Roadmap de développement
+# ��� MyLoc 2.0 - Roadmap de développement
 
 ## ✅ Phase 1 : Base de données et Modèles (TERMINÉ)
 
@@ -67,7 +67,7 @@
 
 ---
 
-## ��� Phase 3 : Frontend - Pages React/Inertia (À FAIRE)
+## ��� Phase 3 : Frontend - Pages React/Inertia (À FAIRE)
 
 ### Priorité 1 : Pages principales (2-3 jours)
 
@@ -138,8 +138,64 @@
 - [ ] Liste notifications (demandes prêt, approbations, etc.)
 
 ---
+---
 
-## ��� Plan d'action pour demain (AFPA)
+## 🔓 Architecture Routes Publiques vs Privées
+
+### Pages PUBLIQUES (accessibles sans connexion)
+- Welcome (page d'accueil)
+- Items/Index (liste des items)
+- Items/Show (détails item)
+- Categories/Index (liste catégories)
+- Categories/Show (items par catégorie)
+
+### Pages PRIVÉES (connexion requise)
+- Items/Create, Edit (créer/modifier item)
+- Loans/* (mes prêts)
+- Favorites/* (mes favoris)
+- Dashboard
+- Tous les commentaires, reviews, etc.
+
+### ⚠️ TODO : Restructurer routes/web.php
+
+**Actuellement** : Toutes les routes sont dans `middleware(['auth', 'verified'])`
+
+**À faire** : Sortir les routes publiques du middleware
+```php
+// ROUTES PUBLIQUES (sans auth)
+Route::get('items', [ItemController::class, 'index']);
+Route::get('items/{item}', [ItemController::class, 'show']);
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{category}', [CategoryController::class, 'show']);
+
+// ROUTES PRIVÉES (avec auth)
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Toutes les autres routes...
+});
+```
+
+### 🎭 Masquage données sensibles
+
+**Dans les controllers publics (index, show) :**
+- Conditionner `->with('owner')` selon `Auth::check()`
+- Passer `isAuthenticated` au frontend
+- Frontend affiche/masque infos selon cette prop
+
+**Exemple ItemController@index :**
+```php
+$items = Item::with(['category'])
+    ->when(Auth::check(), fn($q) => $q->with('owner'))
+    ->latest()
+    ->paginate(12);
+
+return Inertia::render('Items/Index', [
+    'items' => $items,
+    'isAuthenticated' => Auth::check(),
+]);
+```
+
+---
+## ��� Plan d'action pour demain (AFPA)
 
 ### Matin (2h30)
 
@@ -177,7 +233,7 @@
 
 ---
 
-## ��� Design et UI
+## ��� Design et UI
 
 ### Stack technique frontend :
 - React + TypeScript
@@ -193,7 +249,7 @@
 
 ---
 
-## ��� Phase 4 : Seeders et données de test (1 jour)
+## ��� Phase 4 : Seeders et données de test (1 jour)
 
 - [ ] CategorySeeder (10 catégories avec icônes)
 - [ ] UserSeeder (5 utilisateurs de test)
@@ -203,7 +259,7 @@
 
 ---
 
-## ��� Phase 5 : Tests et optimisations (2 jours)
+## ��� Phase 5 : Tests et optimisations (2 jours)
 
 - [ ] Tester tous les flux utilisateur
 - [ ] Responsive design (mobile, tablette)
@@ -213,7 +269,7 @@
 
 ---
 
-## ��� Phase 6 : Sécurité et permissions (1 jour)
+## ��� Phase 6 : Sécurité et permissions (1 jour)
 
 - [ ] Middleware admin pour CategoryController
 - [ ] Policy pour vérifier propriété items/comments/reviews
@@ -222,7 +278,7 @@
 
 ---
 
-## ��� Progression globale
+## ��� Progression globale
 ```
 Phase 1 : Base de données       ████████████████████ 100% ✅
 Phase 2 : Backend               ████████████████████ 100% ✅
@@ -236,7 +292,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Conseils pour le développement frontend
+## ��� Conseils pour le développement frontend
 
 1. **Commence par les pages simples** (Index) avant les complexes (Show avec toutes les features)
 2. **Teste régulièrement** avec `npm run dev` et `php artisan serve`
@@ -246,7 +302,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Ressources utiles
+## ��� Ressources utiles
 
 - Documentation Inertia.js : https://inertiajs.com/
 - Tailwind CSS : https://tailwindcss.com/
@@ -269,7 +325,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 **Dernière mise à jour** : 26 janvier 2026  
 **Développeur** : Emmanuel  
-**Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Mobile# ��� MyLoc 2.0 - Roadmap de développement
+**Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Mobile# ��� MyLoc 2.0 - Roadmap de développement
 
 ## ✅ Phase 1 : Base de données et Modèles (TERMINÉ)
 
@@ -338,7 +394,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Phase 3 : Frontend - Pages React/Inertia (À FAIRE)
+## ��� Phase 3 : Frontend - Pages React/Inertia (À FAIRE)
 
 ### Priorité 1 : Pages principales (2-3 jours)
 
@@ -410,7 +466,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Plan d'action pour demain (AFPA)
+## ��� Plan d'action pour demain (AFPA)
 
 ### Matin (2h30)
 
@@ -448,7 +504,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Design et UI
+## ��� Design et UI
 
 ### Stack technique frontend :
 - React + TypeScript
@@ -464,7 +520,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Phase 4 : Seeders et données de test (1 jour)
+## ��� Phase 4 : Seeders et données de test (1 jour)
 
 - [ ] CategorySeeder (10 catégories avec icônes)
 - [ ] UserSeeder (5 utilisateurs de test)
@@ -474,7 +530,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Phase 5 : Tests et optimisations (2 jours)
+## ��� Phase 5 : Tests et optimisations (2 jours)
 
 - [ ] Tester tous les flux utilisateur
 - [ ] Responsive design (mobile, tablette)
@@ -484,7 +540,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Phase 6 : Sécurité et permissions (1 jour)
+## ��� Phase 6 : Sécurité et permissions (1 jour)
 
 - [ ] Middleware admin pour CategoryController
 - [ ] Policy pour vérifier propriété items/comments/reviews
@@ -493,7 +549,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Progression globale
+## ��� Progression globale
 ```
 Phase 1 : Base de données       ████████████████████ 100% ✅
 Phase 2 : Backend               ████████████████████ 100% ✅
@@ -507,7 +563,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Conseils pour le développement frontend
+## ��� Conseils pour le développement frontend
 
 1. **Commence par les pages simples** (Index) avant les complexes (Show avec toutes les features)
 2. **Teste régulièrement** avec `npm run dev` et `php artisan serve`
@@ -517,7 +573,7 @@ Phase 6 : Sécurité              ░░░░░░░░░░░░░░░�
 
 ---
 
-## ��� Ressources utiles
+## ��� Ressources utiles
 
 - Documentation Inertia.js : https://inertiajs.com/
 - Tailwind CSS : https://tailwindcss.com/
