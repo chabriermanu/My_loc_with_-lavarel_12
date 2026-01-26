@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Favorite;
-use Illuminate\Http\Request;
+use App\Models\Item;
+
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class FavoriteController extends Controller
 {
@@ -12,54 +15,37 @@ class FavoriteController extends Controller
      */
     public function index()
     {
-        //
+        $favorites = Favorite::with(['item.owner', 'item.category'])
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(12);
+
+        return Inertia::render('Favorites/Index', [
+            'favorites' => $favorites
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function toggle(Item $item)
     {
-        //
-    }
+        $favorite = Favorite::where('user_id', Auth::id())
+            ->where('item_id', $item->id)
+            ->first();
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Favorite $favorite)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Favorite $favorite)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Favorite $favorite)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Favorite $favorite)
-    {
-        //
+        if ($favorite) {
+            $favorite->delete();
+            $item->decrement('favorites_count');
+            return back()->with('success', 'Retiré des favoris');
+        } else {
+            // Le favori N'EXISTE PAS → Le créer
+            Favorite::create([
+                'user_id' => Auth::id(),
+                'item_id' => $item->id
+            ]);
+            $item->increment('favorites_count');
+            return back()->with('success', 'Ajouté aux favoris');
+        }
     }
 }

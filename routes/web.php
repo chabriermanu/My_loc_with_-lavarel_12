@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LoanController;
 use Inertia\Inertia;
@@ -32,6 +33,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::patch('loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');
     Route::patch('loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('loans.cancel');
+
+    // Routes Favorites
+    Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+    Route::post('items/{item}/favorite', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
 });
 
 require __DIR__ . '/settings.php';
