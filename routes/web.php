@@ -8,6 +8,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemMediaController;
 use App\Http\Controllers\ItemReviewController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
@@ -54,6 +55,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('item-reviews', [ItemReviewController::class, 'store'])->name('item-reviews.store');
     Route::patch('item-reviews/{itemReview}', [ItemReviewController::class, 'update'])->name('item-reviews.update');
     Route::delete('item-reviews/{itemReview}', [ItemReviewController::class, 'destroy'])->name('item-reviews.destroy');
+
+    //Routes User Reviews
+    Route::post('user-reviews', [UserReviewController::class, 'store'])->name('user-reviews.store');
+    Route::patch('user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('user-reviews.update');
+    Route::delete('user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('user-reviews.destroy');
 });
 
 require __DIR__ . '/settings.php';
