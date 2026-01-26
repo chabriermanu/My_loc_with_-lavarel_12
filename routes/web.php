@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LoanController;
@@ -37,6 +38,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Routes Favorites
     Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
     Route::post('items/{item}/favorite', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
+
+    // Routes Comments
+    Route::post('comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::patch('comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 });
 
 require __DIR__ . '/settings.php';
