@@ -24,4 +24,16 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    server: {
+        host: '0.0.0.0', // Expose sur toutes les interfaces
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            host: 'localhost',
+            protocol: 'ws',
+        },
+        watch: {
+            usePolling: true, // Meilleur watch sous Windows
+        },
+    },
 });
