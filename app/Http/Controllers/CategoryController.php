@@ -87,7 +87,7 @@ class CategoryController extends Controller
             'points' => $request->points,
             'color' => $request->color,
         ]);
-        return Redirect()->route('categories.index')
+        return redirect()->route('categories.index')
             ->with('success', 'Catégorie modifiée avec succès !');
     }
 
