@@ -2,64 +2,56 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
 use App\Models\ItemMedia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ItemMediaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(Request $request, Item $item)
     {
-        //
+        $request->validate([
+            'media' => 'required|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:10240',
+        ]);
+
+        if ($item->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        try {
+            $mediaPath = $request->file('media')->store('items/media', 'public');
+        } catch (\Exception $e) {
+            return back()->withErrors(['media' => 'Erreur lors de l’upload.']);
+        }
+
+        $mime = $request->file('media')->getMimeType();
+        $mediaType = str_starts_with($mime, 'image/') ? 'image' : 'video';
+
+        $lastOrder = $item->media()->max('order') ?? 0;
+
+        ItemMedia::create([
+            'item_id' => $item->id,
+            'media_path' => $mediaPath,
+            'media_type' => $mediaType,
+            'order' => $lastOrder + 1,
+        ]);
+
+        return redirect()->route('items.show', $item->id)
+            ->with('success', 'Média ajouté avec succès !');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(ItemMedia $itemMedia)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ItemMedia $itemMedia)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, ItemMedia $itemMedia)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(ItemMedia $itemMedia)
     {
-        //
+        if ($itemMedia->item->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        Storage::disk('public')->delete($itemMedia->media_path);
+        $itemMedia->delete();
+
+        return redirect()->route('items.show', $itemMedia->item_id)
+            ->with('success', 'Média supprimé avec succès !');
     }
 }

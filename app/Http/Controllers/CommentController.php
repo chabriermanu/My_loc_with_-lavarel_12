@@ -9,14 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
-{    
-  /**
+{
+    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreCommentRequest $request)
     {
         Comment::create([
-            
+
             'item_id' => $request->item_id,
             'user_id' => Auth::id(),
             'parent_id' => $request->parent_id, // null si commentaire principal
@@ -40,7 +40,6 @@ class CommentController extends Controller
         ]);
         return redirect()->route('items.show', $comment->item_id)
             ->with('success', 'Commentaire modifié avec succès !');
-            
     }
 
     /**

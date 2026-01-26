@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemMediaController;
 use App\Http\Controllers\LoanController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -43,6 +44,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('comments', [CommentController::class, 'store'])->name('comments.store');
     Route::patch('comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    //Routes ItemMedia
+    Route::post('/items/{item}/media', [ItemMediaController::class, 'store'])->name('items.media.store');
+    Route::delete('/media/{itemMedia}', [ItemMediaController::class, 'destroy'])->name('items.media.destroy');
 });
 
 require __DIR__ . '/settings.php';
