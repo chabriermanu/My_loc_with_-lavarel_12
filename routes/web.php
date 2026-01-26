@@ -6,6 +6,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemMediaController;
+use App\Http\Controllers\ItemReviewController;
 use App\Http\Controllers\LoanController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -48,6 +49,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //Routes ItemMedia
     Route::post('/items/{item}/media', [ItemMediaController::class, 'store'])->name('items.media.store');
     Route::delete('/media/{itemMedia}', [ItemMediaController::class, 'destroy'])->name('items.media.destroy');
+
+    // Routes Item Reviews
+    Route::post('item-reviews', [ItemReviewController::class, 'store'])->name('item-reviews.store');
+    Route::patch('item-reviews/{itemReview}', [ItemReviewController::class, 'update'])->name('item-reviews.update');
+    Route::delete('item-reviews/{itemReview}', [ItemReviewController::class, 'destroy'])->name('item-reviews.destroy');
 });
 
 require __DIR__ . '/settings.php';
