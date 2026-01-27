@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable
 {
@@ -20,6 +21,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'pseudo',
         'first_name',
         'last_name',
         'email',
@@ -43,6 +45,8 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $appends = ['name'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -54,9 +58,16 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-            'rating'=>'decimal:2',
-            'total_ratings'=>'integer'
+            'rating' => 'decimal:2',
+            'total_ratings' => 'integer'
         ];
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->pseudo ?? ($this->first_name . ' ' . $this->last_name)
+        );
     }
 
     public function items(): HasMany
@@ -73,28 +84,18 @@ class User extends Authenticatable
     }
     public function favorites(): HasMany
     {
-        return $this->hasMany(Favorite::class );
+        return $this->hasMany(Favorite::class);
     }
     public function givenReviews(): HasMany
     {
-        return $this->hasMany(UserReview::class,'reviewer_id');
+        return $this->hasMany(UserReview::class, 'reviewer_id');
     }
     public function receivedReviews(): HasMany
     {
-        return $this->hasMany(UserReview::class,'reviewee_id');
+        return $this->hasMany(UserReview::class, 'reviewee_id');
     }
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
     }
-
-
-
-
-
-
-
-
-
-
 }

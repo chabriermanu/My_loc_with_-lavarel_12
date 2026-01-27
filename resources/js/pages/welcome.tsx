@@ -1,48 +1,240 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import type { SharedData } from '@/types';
+import ItemCard from '@/components/Items/ItemCard';
 import { dashboard, login, register } from '@/routes';
+import type { SharedData } from '@/types';
+import type { Category, Item } from '@/types/model';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef } from 'react';
 
-export default function Welcome({ canRegister = true }: { canRegister?: boolean }) {
+interface WelcomeProps {
+    canRegister?: boolean;
+    topRatedItems: Item[];
+    recentItems: Item[];
+    popularCategories: Category[];
+}
+
+export default function Welcome({
+    canRegister = true,
+    topRatedItems = [],
+    recentItems = [],
+    popularCategories = [],
+}: WelcomeProps) {
     const { auth } = usePage<SharedData>().props;
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = 400;
+            scrollContainerRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth',
+            });
+        }
+    };
 
     return (
         <>
-            <Head title="Welcome" />
+            <Head title="Bienvenue" />
 
-            <div className="flex min-h-screen flex-col items-center justify-center bg-[#FDFDFC] p-6 text-[#1b1b18] dark:bg-[#0a0a0a]">
-                <div className="w-full max-w-[335px] lg:max-w-4xl text-center">
-                    <h1 className="text-3xl font-bold mb-4">Bienvenue sur MyLoc</h1>
+            <div className="min-h-screen bg-gray-50">
+                {/* SECTION HERO */}
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                    <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+                        <div className="text-center">
+                            <h1 className="mb-6 text-4xl font-bold md:text-5xl">
+                                Bienvenue sur MyLoc
+                            </h1>
 
-                    <p className="text-[#706f6c] dark:text-[#A1A09A] mb-6">
-                        Louez, partagez et découvrez des objets près de chez vous.
-                    </p>
+                            <p className="mb-8 text-xl text-blue-100 md:text-2xl">
+                                Louez, partagez et découvrez des objets et des
+                                services près de chez vous.
+                            </p>
 
-                    <div className="flex justify-center gap-4">
-                        {auth.user ? (
-                            <Link
-                                href={dashboard()}
-                                className="rounded bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
-                            >
-                                Accéder au dashboard
-                            </Link>
-                        ) : (
-                            <>
-                                <Link
-                                    href={login()}
-                                    className="rounded border border-gray-300 px-5 py-2 hover:bg-gray-100 dark:border-[#3E3E3A]"
-                                >
-                                    Connexion
-                                </Link>
-
-                                {canRegister && (
+                            <div className="flex justify-center gap-4">
+                                {auth.user ? (
                                     <Link
-                                        href={register()}
-                                        className="rounded bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
+                                        href={dashboard()}
+                                        className="rounded-lg bg-white px-6 py-3 font-semibold text-blue-600 transition hover:bg-blue-50"
                                     >
-                                        Inscription
+                                        Accéder au dashboard
                                     </Link>
+                                ) : (
+                                    <>
+                                        <Link
+                                            href={login()}
+                                            className="rounded-lg border-2 border-white px-6 py-3 font-semibold transition hover:bg-white hover:text-blue-600"
+                                        >
+                                            Connexion
+                                        </Link>
+
+                                        {canRegister && (
+                                            <Link
+                                                href={register()}
+                                                className="rounded-lg bg-white px-6 py-3 font-semibold text-blue-600 transition hover:bg-blue-50"
+                                            >
+                                                Inscription
+                                            </Link>
+                                        )}
+                                    </>
                                 )}
-                            </>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SECTION ITEMS LES MIEUX NOTÉS - SCROLL HORIZONTAL */}
+                <div className="bg-white py-16">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="mb-8 flex items-center justify-between">
+                            <h2 className="text-3xl font-bold text-gray-900">
+                                ⭐ Items les mieux notés
+                            </h2>
+                            {topRatedItems.length > 0 && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => scroll('left')}
+                                        className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+                                    >
+                                        <ChevronLeft className="h-6 w-6" />
+                                    </button>
+                                    <button
+                                        onClick={() => scroll('right')}
+                                        className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+                                    >
+                                        <ChevronRight className="h-6 w-6" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* CONTENU OU MESSAGE VIDE */}
+                        {topRatedItems.length > 0 ? (
+                            <div
+                                ref={scrollContainerRef}
+                                className="scrollbar-hide flex gap-6 overflow-x-auto scroll-smooth pb-4"
+                                style={{
+                                    scrollbarWidth: 'none',
+                                    msOverflowStyle: 'none',
+                                }}
+                            >
+                                {topRatedItems.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="w-80 flex-none"
+                                    >
+                                        <ItemCard
+                                            item={item}
+                                            showActions={false}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <p className="text-lg text-gray-500">
+                                    Aucun item noté pour le moment. Soyez le
+                                    premier à noter un item ! 🌟
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* SECTION CATÉGORIES LES PLUS VUES */}
+                <div className="bg-gray-50 py-16">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="mb-8 flex items-center justify-between">
+                            <h2 className="text-3xl font-bold text-gray-900">
+                                🔥 Catégories populaires
+                            </h2>
+                            {popularCategories.length > 0 && (
+                                <Link
+                                    href="/categories"
+                                    className="font-medium text-blue-600 hover:text-blue-700"
+                                >
+                                    Voir tout →
+                                </Link>
+                            )}
+                        </div>
+
+                        {/* CONTENU OU MESSAGE VIDE */}
+                        {popularCategories.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                                {popularCategories.map((category) => (
+                                    <Link
+                                        key={category.id}
+                                        href={`/categories/${category.slug}`}
+                                        className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl"
+                                    >
+                                        {/* Badge du nombre d'items */}
+                                        <div className="absolute top-4 right-4 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
+                                            {category.items_count}
+                                        </div>
+
+                                        {/* Icône ou emoji */}
+                                        <div className="mb-4 text-4xl">
+                                            {category.icon || '📦'}
+                                        </div>
+
+                                        {/* Nom de la catégorie */}
+                                        <h3 className="text-lg font-bold text-gray-900 transition group-hover:text-blue-600">
+                                            {category.name}
+                                        </h3>
+
+                                        {/* Description */}
+                                        {category.description && (
+                                            <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                                                {category.description}
+                                            </p>
+                                        )}
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <p className="text-lg text-gray-500">
+                                    Aucune catégorie disponible pour le moment.
+                                    📂
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* SECTION ITEMS RÉCENTS */}
+                <div className="bg-white py-16">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="mb-8 flex items-center justify-between">
+                            <h2 className="text-3xl font-bold text-gray-900">
+                                🆕 Nouveautés
+                            </h2>
+                            {recentItems.length > 0 && (
+                                <Link
+                                    href="/items"
+                                    className="font-medium text-blue-600 hover:text-blue-700"
+                                >
+                                    Voir tout →
+                                </Link>
+                            )}
+                        </div>
+
+                        {/* CONTENU OU MESSAGE VIDE */}
+                        {recentItems.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {recentItems.map((item) => (
+                                    <ItemCard
+                                        key={item.id}
+                                        item={item}
+                                        showActions={false}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <p className="text-lg text-gray-500">
+                                    Aucun item récent pour le moment. 📦
+                                </p>
+                            </div>
                         )}
                     </div>
                 </div>

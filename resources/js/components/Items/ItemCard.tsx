@@ -1,10 +1,20 @@
-import { router, usePage, Link } from '@inertiajs/react';
+import type { Item } from '@/types/model';
+import { Link, router, usePage } from '@inertiajs/react';
+import {
+    Edit,
+    Eye,
+    Heart,
+    MessageCircle,
+    Star,
+    StarOff,
+    Trash,
+} from 'lucide-react';
 import { useState } from 'react';
-import route from 'ziggy-js';
-import { Item } from '@/types/model';
-import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
-import { Edit, Eye, Heart, Trash, MessageCircle, Star, StarOff } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
+
+// Déclare route comme fonction globale (fournie par Ziggy)
+declare function route(name: string, params?: any): string;
 
 interface ItemCardProps {
     item: Item;
@@ -12,29 +22,27 @@ interface ItemCardProps {
 }
 
 export default function ItemCard({ item, showActions = false }: ItemCardProps) {
-
     const { auth } = usePage().props as any;
     const [deletingId, setDeletingId] = useState<number | null>(null);
 
-    
     const handleDelete = (itemId: number) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?'))
+            return;
 
         setDeletingId(itemId);
 
         router.delete(`/items/${itemId}`, {
             onFinish: () => setDeletingId(null),
-            onError: () => alert("Une erreur est survenue lors de la suppression.")
+            onError: () =>
+                alert('Une erreur est survenue lors de la suppression.'),
         });
     };
 
-  
     const handleFavorite = (e: React.MouseEvent) => {
         e.preventDefault();
         router.post(`/items/${item.id}/favorite`);
     };
 
-  
     const handleLike = (itemId: number) => {
         router.post(
             '/like/toggle',
@@ -45,22 +53,20 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
             {
                 preserveScroll: true,
                 preserveState: true,
-            }
+            },
         );
     };
-
 
     const canEditItem = (item: Item) => auth.user?.id === item.user_id;
 
     return (
         <Card className="overflow-hidden">
-
             {/* IMAGE */}
             {item.picture && (
                 <div className="aspect-w-16 aspect-h-9">
                     <img
                         src={`/storage/${item.picture}`}
-                        className="object-cover w-full h-full rounded-md"
+                        className="h-full w-full rounded-md object-cover"
                         alt={item.name}
                     />
                 </div>
@@ -72,7 +78,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                     <video
                         src={`/storage/${item.video}`}
                         controls
-                        className="object-cover w-full h-full rounded-md"
+                        className="h-full w-full rounded-md object-cover"
                     />
                 </div>
             )}
@@ -84,7 +90,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
             </CardHeader>
 
             <CardContent>
-                <p className="text-gray-600 line-clamp-3 md:line-clamp-4">
+                <p className="line-clamp-3 text-gray-600 md:line-clamp-4">
                     {item.description}
                 </p>
 
@@ -94,15 +100,15 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             Par {item.owner.first_name} {item.owner.last_name}
                         </span>
                     )}
-                    <span>{new Date(item.created_at).toLocaleDateString('fr-FR')}</span>
+                    <span>
+                        {new Date(item.created_at).toLocaleDateString('fr-FR')}
+                    </span>
                 </div>
             </CardContent>
 
             <CardFooter className="flex items-center justify-between">
-
                 {/* LEFT SIDE : LIKE + FAVORITE + COMMENTS */}
                 <div className="flex items-center space-x-3">
-
                     {/* LIKE */}
                     <div className="flex items-center space-x-1">
                         <Button
@@ -111,16 +117,18 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             onClick={() => handleLike(item.id)}
                             className={`transition-colors ${
                                 item.is_liked
-                                    ? "text-red-600 hover:text-red-700"
-                                    : "text-gray-600 hover:text-gray-700"
+                                    ? 'text-red-600 hover:text-red-700'
+                                    : 'text-gray-600 hover:text-gray-700'
                             }`}
                         >
                             <Heart
                                 className="h-6 w-6"
-                                fill={item.is_liked ? "currentColor" : "none"}
+                                fill={item.is_liked ? 'currentColor' : 'none'}
                             />
                         </Button>
-                        <span className="text-gray-600">{item.likes_count}</span>
+                        <span className="text-gray-600">
+                            {item.likes_count}
+                        </span>
                     </div>
 
                     {/* FAVORITE */}
@@ -131,8 +139,8 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             onClick={handleFavorite}
                             className={`transition-colors ${
                                 item.is_favorited
-                                    ? "text-yellow-500 hover:text-yellow-600"
-                                    : "text-gray-600 hover:text-gray-700"
+                                    ? 'text-yellow-500 hover:text-yellow-600'
+                                    : 'text-gray-600 hover:text-gray-700'
                             }`}
                         >
                             {item.is_favorited ? (
@@ -141,7 +149,9 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                                 <StarOff className="h-6 w-6" />
                             )}
                         </Button>
-                        <span className="text-gray-600">{item.favorites_count}</span>
+                        <span className="text-gray-600">
+                            {item.favorites_count}
+                        </span>
                     </div>
 
                     {/* COMMENTS */}
@@ -151,9 +161,10 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                                 <MessageCircle className="h-6 w-6" />
                             </Link>
                         </Button>
-                        <span className="text-gray-600">{item.comments_count}</span>
+                        <span className="text-gray-600">
+                            {item.comments_count}
+                        </span>
                     </div>
-
                 </div>
 
                 {/* RIGHT SIDE : ACTIONS */}
@@ -183,7 +194,6 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                         </>
                     )}
                 </div>
-
             </CardFooter>
         </Card>
     );

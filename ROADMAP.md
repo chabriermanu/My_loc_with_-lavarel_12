@@ -281,7 +281,7 @@ return Inertia::render('Items/Index', [
 ## ��� Progression globale
 ```
 Phase 1 : Base de données       ████████████████████ 100% ✅
-Phase 2 : Backend               ████████████████████ 100% ✅
+Phase 2 : Backend               ███████████████████  90% ✅
 Phase 3 : Frontend              ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 4 : Seeders               ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5 : Tests                 ░░░░░░░░░░░░░░░░░░░░   0%

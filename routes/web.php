@@ -3,6 +3,7 @@
 use App\Models\Item;
 use App\Models\Category;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
@@ -15,26 +16,58 @@ use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-// Routes Pucliques (sans auth)
+// Routes Publiques (sans auth)
 
 Route::get('/', function () {
+    // Items les mieux notés (pour le scroll horizontal)
+    $topRatedItems = Item::with(['category', 'owner'])
+        ->withCount(['likes', 'comments', 'favorites'])
+        ->where('is_available', true)
+        ->whereNotNull('rating')
+        ->where('total_ratings', '>', 0)
+        ->orderByDesc('rating')
+        ->orderByDesc('total_ratings')
+        ->take(12) // Plus d'items pour le scroll
+        ->get()
+        ->map(function ($item) {
+            $item->is_liked = Auth::check()
+                ? $item->likes()->where('user_id', Auth::id())->exists()
+                : false;
+            $item->is_favorited = Auth::check()
+                ? $item->favorites()->where('user_id', Auth::id())->exists()
+                : false;
+            return $item;
+        });
 
-    // Items récents et disponibles
+    // Items récents (pour une autre section)
     $recentItems = Item::with(['category', 'owner'])
+        ->withCount(['likes', 'comments', 'favorites'])
         ->where('is_available', true)
         ->latest()
         ->take(8)
+        ->get()
+        ->map(function ($item) {
+            $item->is_liked = Auth::check()
+                ? $item->likes()->where('user_id', Auth::id())->exists()
+                : false;
+            $item->is_favorited = Auth::check()
+                ? $item->favorites()->where('user_id', Auth::id())->exists()
+                : false;
+            return $item;
+        });
+
+    // Catégories les plus vues (basées sur le nombre d'items)
+    $popularCategories = Category::withCount('items')
+        ->having('items_count', '>', 0)
+        ->orderByDesc('items_count')
+        ->take(8)
         ->get();
-    
-    // Catégories avec compteur d'items
-    $categories = Category::withCount('items')
-        ->get();
-    
+
     return Inertia::render('Welcome', [
         'canRegister' => Features::enabled(Features::registration()),
+        'topRatedItems' => $topRatedItems,
         'recentItems' => $recentItems,
-        'categories' => $categories,
-      
+        'popularCategories' => $popularCategories,
     ]);
 })->name('home');
 
@@ -45,7 +78,7 @@ Route::get('categories/{category}', [CategoryController::class, 'show']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return Inertia::render('Dashboard');
     })->name('dashboard');
 
     // Routes Categories
@@ -75,7 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
-    //Routes ItemMedia
+    // Routes ItemMedia
     Route::post('/items/{item}/media', [ItemMediaController::class, 'store'])->name('items.media.store');
     Route::delete('/media/{itemMedia}', [ItemMediaController::class, 'destroy'])->name('items.media.destroy');
 
@@ -84,7 +117,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('item-reviews/{itemReview}', [ItemReviewController::class, 'update'])->name('item-reviews.update');
     Route::delete('item-reviews/{itemReview}', [ItemReviewController::class, 'destroy'])->name('item-reviews.destroy');
 
-    //Routes User Reviews
+    // Routes User Reviews
     Route::post('user-reviews', [UserReviewController::class, 'store'])->name('user-reviews.store');
     Route::patch('user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('user-reviews.update');
     Route::delete('user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('user-reviews.destroy');
