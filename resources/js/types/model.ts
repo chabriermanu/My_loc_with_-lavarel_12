@@ -40,7 +40,12 @@ export interface Item {
     views_count: number;
     favorites_count: number;
     category: Category;
-    owner?: User;
+    owner: User;
+    created_at: string;
+    likes_count: number;
+    comments_count: number;
+    is_liked: boolean;
+    is_favorited: boolean;
 }
 
 export interface Loan {
