@@ -6,14 +6,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use App\Models\Comment;
+use App\Models\Like;
+use App\Traits\Likable;
 
 class Item extends Model
 {
     /** @use HasFactory<\Database\Factories\ItemFactory> */
     use HasFactory;
+    use Likable;
 
     protected $fillable = [
-
         'name',
         'slug',
         'description',
@@ -29,18 +33,15 @@ class Item extends Model
         'total_ratings',
         'views_count',
         'favorites_count',
-
     ];
 
     protected $casts = [
-
-        "value" => "decimal:2",
-        'rating' => "decimal:2",
+        'value' => 'decimal:2',
+        'rating' => 'decimal:2',
         'is_available' => 'boolean',
-        'total_ratings' => "integer",
+        'total_ratings' => 'integer',
         'views_count' => 'integer',
-        'favorites_count' => 'integer'
-
+        'favorites_count' => 'integer',
     ];
 
     public function owner(): BelongsTo
@@ -61,6 +62,11 @@ class Item extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(Loan::class);
+    }
+
+    public function likes(): MorphMany
+    {
+        return $this->morphMany(Like::class, 'likeable');
     }
 
     public function favorites(): HasMany

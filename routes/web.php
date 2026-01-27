@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Item;
+use App\Models\Category;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
@@ -7,6 +9,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemMediaController;
 use App\Http\Controllers\ItemReviewController;
+use App\Http\Controllers\LikeController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
@@ -15,10 +18,26 @@ use Laravel\Fortify\Features;
 // Routes Pucliques (sans auth)
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
+
+    // Items récents et disponibles
+    $recentItems = Item::with(['category', 'owner'])
+        ->where('is_available', true)
+        ->latest()
+        ->take(8)
+        ->get();
+    
+    // Catégories avec compteur d'items
+    $categories = Category::withCount('items')
+        ->get();
+    
+    return Inertia::render('Welcome', [
         'canRegister' => Features::enabled(Features::registration()),
+        'recentItems' => $recentItems,
+        'categories' => $categories,
+      
     ]);
 })->name('home');
+
 Route::get('items', [ItemController::class, 'index']);
 Route::get('items/{item}', [ItemController::class, 'show']);
 Route::get('categories', [CategoryController::class, 'index']);
@@ -43,6 +62,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::patch('loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');
     Route::patch('loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('loans.cancel');
+
+    // Routes like item && comment
+    Route::post('/like/toggle', [LikeController::class, 'toggle'])->name('like.toggle');
 
     // Routes Favorites
     Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites.index');
