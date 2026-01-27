@@ -12,11 +12,17 @@ use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
+// Routes Pucliques (sans auth)
+
 Route::get('/', function () {
     return Inertia::render('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
     ]);
 })->name('home');
+Route::get('items', [ItemController::class, 'index']);
+Route::get('items/{item}', [ItemController::class, 'show']);
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{category}', [CategoryController::class, 'show']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
@@ -24,10 +30,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     // Routes Categories
-    Route::resource('categories', CategoryController::class);
+    Route::resource('categories', CategoryController::class)->except(['index', 'show']);
 
     // Routes Items
-    Route::resource('items', ItemController::class);
+    Route::resource('items', ItemController::class)->except(['index', 'show']);
 
     // Routes Loans
     Route::resource('loans', LoanController::class)->only(['index', 'store', 'show']);
