@@ -27,22 +27,33 @@ class ItemController extends Controller
     }
 
     /**
+     * Display user's own items
+     */
+    public function myItems()
+    {
+        $items = Item::with(['category'])
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(12);
+
+        return Inertia::render('Items/MyItems', [
+            'items' => $items
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        $categories = Category::all(); // Liste des catégories pour le select
-
-        $conditions = ['new', 'like_new', 'good', 'fair', 'poor']; // Options de condition
-
-        $mediaTypes = ['image', 'video', 'both']; // Options de type média
+        $categories = Category::all();
+        $conditions = ['new', 'like_new', 'good', 'fair', 'poor'];
+        $mediaTypes = ['image', 'video', 'both'];
 
         return Inertia::render('Items/Create', [
-
             'categories' => $categories,
             'conditions' => $conditions,
             'mediaTypes' => $mediaTypes
-
         ]);
     }
 
@@ -54,19 +65,16 @@ class ItemController extends Controller
         $picturePath = null;
 
         if ($request->hasFile('picture')) {
-
             $picturePath = $request->file('picture')->store('items', 'public');
         }
 
         $videoPath = null;
 
         if ($request->hasFile('video')) {
-
             $videoPath = $request->file('video')->store('items', 'public');
         }
 
         Item::create([
-
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
@@ -78,11 +86,10 @@ class ItemController extends Controller
             'condition' => $request->condition,
             'value' => $request->value,
             'is_available' => true,
-
         ]);
 
         return redirect()->route('items.index')
-            ->with('success', 'Item créé avec succès ! ');
+            ->with('success', 'Item créé avec succès !');
     }
 
     /**
@@ -109,7 +116,7 @@ class ItemController extends Controller
         if ($item->user_id !== Auth::id()) {
             abort(403, 'Action non autorisée');
         }
-        // Passer les données pour le formulaire
+
         $categories = Category::all();
         $conditions = ['new', 'like_new', 'good', 'fair', 'poor'];
         $mediaTypes = ['image', 'video', 'both'];
@@ -134,18 +141,16 @@ class ItemController extends Controller
         if ($request->hasFile('picture')) {
             $picturePath = $request->file('picture')->store('items', 'public');
         } else {
-            $picturePath = $item->picture; // Garder l'ancienne
+            $picturePath = $item->picture;
         }
 
-        // Gestion upload vidéo
         if ($request->hasFile('video')) {
             $videoPath = $request->file('video')->store('items', 'public');
         } else {
-            $videoPath = $item->video; // Garder l'ancienne
+            $videoPath = $item->video;
         }
 
         $item->update([
-
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
@@ -156,11 +161,10 @@ class ItemController extends Controller
             'condition' => $request->condition,
             'value' => $request->value,
             'is_available' => true,
-
         ]);
 
         return redirect()->route('items.index')
-            ->with('success', 'Item modifiée avec succès !');
+            ->with('success', 'Item modifié avec succès !');
     }
 
     /**
@@ -173,7 +177,7 @@ class ItemController extends Controller
         }
 
         if ($item->loans()->whereIn('status', ['pending', 'approved', 'in_progress'])->exists()) {
-            return redirect()->back()->with('error', 'impossible de supprimer un item avec des pêts en cours ! ');
+            return redirect()->back()->with('error', 'Impossible de supprimer un item avec des prêts en cours !');
         }
 
         $item->delete();

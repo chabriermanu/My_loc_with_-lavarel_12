@@ -55,7 +55,13 @@ export interface Loan {
     borrower_id: number;
     start_date: string;
     end_date: string;
-    status: 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'overdue';
+    status:
+        | 'pending'
+        | 'approved'
+        | 'in_progress'
+        | 'completed'
+        | 'cancelled'
+        | 'overdue';
     returned_at?: string;
     notes?: string;
     item: Item;
@@ -74,6 +80,18 @@ export interface Comment {
     replies?: Comment[];
 }
 
+// Type pour Laravel paginate() - format simple
+export interface LaravelPagination<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
+}
+
+// Type pour Inertia paginator - format avec meta et links
 export type PaginatedData<T> = {
     data: T[];
     links: {

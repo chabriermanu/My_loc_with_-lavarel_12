@@ -28,7 +28,7 @@ Route::get('/', function () {
         ->where('total_ratings', '>', 0)
         ->orderByDesc('rating')
         ->orderByDesc('total_ratings')
-        ->take(12) // Plus d'items pour le scroll
+        ->take(12)
         ->get()
         ->map(function ($item) {
             $item->is_liked = Auth::check()
@@ -80,6 +80,9 @@ Route::get('categories/{category}', [CategoryController::class, 'show']);
 Route::middleware(['auth', 'verified'])->group(function () {
     // Route Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Route Mes Items
+    Route::get('my-items', [ItemController::class, 'myItems'])->name('items.my');
 
     // Routes Categories
     Route::resource('categories', CategoryController::class)->except(['index', 'show']);
