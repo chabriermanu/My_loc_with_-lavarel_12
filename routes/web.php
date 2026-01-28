@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemMediaController;
@@ -77,9 +78,8 @@ Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{category}', [CategoryController::class, 'show']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    // Route Dashboard
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Routes Categories
     Route::resource('categories', CategoryController::class)->except(['index', 'show']);
