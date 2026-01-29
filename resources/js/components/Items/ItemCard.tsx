@@ -1,14 +1,6 @@
 import type { Item } from '@/types/model';
 import { Link, router, usePage } from '@inertiajs/react';
-import {
-    Edit,
-    Eye,
-    Heart,
-    MessageCircle,
-    Star,
-    StarOff,
-    Trash,
-} from 'lucide-react';
+import { Edit, Eye, Heart, MessageCircle, Star, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
@@ -102,9 +94,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                 )}
                 <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
                     {showActions && item.owner && (
-                        <span>
-                            Par {item.owner.first_name} {item.owner.last_name}
-                        </span>
+                        <span>Par {item.owner.pseudo}</span>
                     )}
                     <span>
                         {new Date(item.created_at).toLocaleDateString('fr-FR')}
@@ -149,11 +139,12 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                                     : 'text-gray-600 hover:text-gray-700'
                             }`}
                         >
-                            {item.is_favorited ? (
-                                <Star className="h-6 w-6" fill="currentColor" />
-                            ) : (
-                                <StarOff className="h-6 w-6" />
-                            )}
+                            <Star
+                                className="h-6 w-6"
+                                fill={
+                                    item.is_favorited ? 'currentColor' : 'none'
+                                }
+                            />
                         </Button>
                         <span className="text-gray-600">
                             {item.favorites_count}
@@ -163,7 +154,11 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                     {/* COMMENTS */}
                     <div className="flex items-center space-x-1">
                         <Button variant="ghost" size="icon" asChild>
-                            <Link href={route('items.show', item.id)}>
+                            <Link
+                                href={
+                                    route('items.show', item.id) + '#comments'
+                                }
+                            >
                                 <MessageCircle className="h-6 w-6" />
                             </Link>
                         </Button>
