@@ -1,15 +1,5 @@
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
-    avatar?: string;
-    phone?: string;
-    bio?: string;
-    rating?: number;
-    total_ratings?: number;
-}
+import type { User } from './auth';
+import type { PageProps } from './page'; // ← Importe depuis page.ts
 
 export interface Category {
     id: number;
@@ -46,6 +36,8 @@ export interface Item {
     comments_count: number;
     is_liked: boolean;
     is_favorited: boolean;
+    comments?: Comment[];
+    reviews?: ItemReview[];
 }
 
 export interface Loan {
@@ -76,11 +68,10 @@ export interface Comment {
     parent_id?: number;
     content: string;
     created_at: string;
-    user: User;
+    user: User; // ← Doit pointer vers le bon User
     replies?: Comment[];
 }
 
-// Type pour Laravel paginate() - format simple
 export interface LaravelPagination<T> {
     data: T[];
     current_page: number;
@@ -91,7 +82,6 @@ export interface LaravelPagination<T> {
     to: number;
 }
 
-// Type pour Inertia paginator - format avec meta et links
 export type PaginatedData<T> = {
     data: T[];
     links: {
@@ -109,3 +99,42 @@ export type PaginatedData<T> = {
         total: number;
     };
 };
+
+export interface PostFormData {
+    name: string;
+    description: string;
+    category_id: string;
+    condition?: string;
+    media_type?: string;
+    value?: string;
+    picture: File | null;
+    video: File | null;
+}
+
+export interface CreateProps extends PageProps {
+    categories: Category[];
+    conditions: string[];
+    mediaTypes: string[];
+}
+
+export interface EditProps extends CreateProps {
+    item: Item;
+}
+
+export interface ShowProps extends PageProps {
+    item: Item;
+    isFavorited: boolean;
+    hasCompletedLoan: boolean;
+    userReview: ItemReview | null;
+}
+
+export interface ItemReview {
+    id: number;
+    item_id: number;
+    user_id: number;
+    loan_id: number;
+    rating: number;
+    comment?: string;
+    created_at: string;
+    user: User;
+}

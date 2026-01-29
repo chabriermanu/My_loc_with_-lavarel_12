@@ -7,6 +7,9 @@ import type { Item, LaravelPagination } from '@/types/model';
 import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 
+// Déclare route comme fonction globale (fournie par Ziggy)
+declare function route(name: string, params?: any): string;
+
 interface MyItemsProps {
     items: LaravelPagination<Item>;
 }
@@ -35,7 +38,7 @@ export default function MyItems({ items }: MyItemsProps) {
 
                     {/* Bouton Ajouter */}
                     <Link
-                        href="/items/create"
+                        href={route('items.create')}
                         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
                     >
                         <Plus className="h-5 w-5" />
@@ -61,7 +64,7 @@ export default function MyItems({ items }: MyItemsProps) {
                             Vous n'avez encore aucun item
                         </p>
                         <Link
-                            href="/items/create"
+                            href={route('items.create')}
                             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
                         >
                             <Plus className="h-5 w-5" />

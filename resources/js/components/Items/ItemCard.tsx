@@ -88,14 +88,20 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                     {item.name}
                 </h3>
             </CardHeader>
-
             <CardContent>
                 <p className="line-clamp-3 text-gray-600 md:line-clamp-4">
                     {item.description}
                 </p>
-
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                    {showActions && (
+                {/* Affichage de la catégorie */}
+                {item.category && (
+                    <div className="mt-3">
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                            {item.category.name}
+                        </span>
+                    </div>
+                )}
+                <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+                    {showActions && item.owner && (
                         <span>
                             Par {item.owner.first_name} {item.owner.last_name}
                         </span>

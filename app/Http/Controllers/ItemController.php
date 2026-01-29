@@ -97,14 +97,39 @@ class ItemController extends Controller
      */
     public function show(Item $item)
     {
-        $item->load(['owner', 'category', 'media', 'reviews', 'comments']);
+        $item->load([
+            'owner',
+            'category',
+            'media',
+            'reviews.user',
+            'comments.user',
+            'comments.replies.user'
+        ]);
+
         $item->increment('views_count');
+
         $isFavorited = Auth::check()
             ? $item->favorites()->where('user_id', Auth::id())->exists()
             : false;
+
+        // Vérifier si l'utilisateur a déjà emprunté et restitué cet item
+        $hasCompletedLoan = Auth::check()
+            ? $item->loans()
+            ->where('borrower_id', Auth::id())
+            ->where('status', 'completed')
+            ->exists()
+            : false;
+
+        // Vérifier si l'utilisateur a déjà laissé un avis
+        $userReview = Auth::check()
+            ? $item->reviews()->where('user_id', Auth::id())->first()
+            : null;
+
         return Inertia::render('Items/Show', [
             'item' => $item,
             'isFavorited' => $isFavorited,
+            'hasCompletedLoan' => $hasCompletedLoan,
+            'userReview' => $userReview,
         ]);
     }
 

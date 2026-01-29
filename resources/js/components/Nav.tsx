@@ -4,6 +4,7 @@ import type { PageProps } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown, LogOut, Menu, Settings, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { route } from 'ziggy-js';
 
 export default function Navbar() {
     const { auth } = usePage<PageProps>().props;
@@ -84,7 +85,7 @@ export default function Navbar() {
                         {auth.user ? (
                             <>
                                 <Link
-                                    href="/items/create"
+                                    href={route('items.create')}
                                     className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                                 >
                                     Ajouter un item

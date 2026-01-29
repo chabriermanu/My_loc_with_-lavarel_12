@@ -17,7 +17,9 @@ use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-// Routes Publiques (sans auth)
+// ============================================================
+// ROUTES PUBLIQUES (sans paramètres dynamiques)
+// ============================================================
 
 Route::get('/', function () {
     // Items les mieux notés (pour le scroll horizontal)
@@ -72,34 +74,39 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('items', [ItemController::class, 'index']);
-Route::get('items/{item}', [ItemController::class, 'show']);
-Route::get('categories', [CategoryController::class, 'index']);
-Route::get('categories/{category}', [CategoryController::class, 'show']);
+Route::get('items', [ItemController::class, 'index'])->name('items.index');
+Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+
+// ============================================================
+// ROUTES PRIVÉES (authentification requise)
+// ============================================================
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Route Dashboard
+
+    // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Route Mes Items
+    // Mes Items
     Route::get('my-items', [ItemController::class, 'myItems'])->name('items.my');
+
+    // ⚠️ ROUTES ITEMS (create/edit AVANT les routes avec {item})
+    Route::get('items/create', [ItemController::class, 'create'])->name('items.create');
+    Route::post('items', [ItemController::class, 'store'])->name('items.store');
+    Route::get('items/{item}/edit', [ItemController::class, 'edit'])->name('items.edit');
+    Route::put('items/{item}', [ItemController::class, 'update'])->name('items.update');
+    Route::delete('items/{item}', [ItemController::class, 'destroy'])->name('items.destroy');
 
     // Routes Categories
     Route::resource('categories', CategoryController::class)->except(['index', 'show']);
 
-    // Routes Items
-    Route::resource('items', ItemController::class)->except(['index', 'show']);
-
     // Routes Loans
     Route::resource('loans', LoanController::class)->only(['index', 'store', 'show']);
-
-    // Routes personnalisées pour les actions sur les prêts
     Route::patch('loans/{loan}/approve', [LoanController::class, 'approve'])->name('loans.approve');
     Route::patch('loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::patch('loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');
     Route::patch('loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('loans.cancel');
 
-    // Routes like item && comment
+    // Routes Likes
     Route::post('/like/toggle', [LikeController::class, 'toggle'])->name('like.toggle');
 
     // Routes Favorites
@@ -125,5 +132,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('user-reviews.update');
     Route::delete('user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('user-reviews.destroy');
 });
+
+// ============================================================
+// ROUTES PUBLIQUES AVEC PARAMÈTRES DYNAMIQUES (À LA FIN !)
+// ============================================================
+
+// ⚠️ Ces routes DOIVENT être après items/create et items/{item}/edit
+Route::get('items/{item}', [ItemController::class, 'show'])
+    ->name('items.show')
+    ->where('item', '[0-9]+'); // Accepte uniquement des chiffres
+
+Route::get('categories/{category}', [CategoryController::class, 'show'])
+    ->name('categories.show');
 
 require __DIR__ . '/settings.php';

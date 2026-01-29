@@ -2,8 +2,8 @@
 
 import Nav from '@/components/Nav';
 import type { AppLayoutProps } from '@/types';
-import { ChevronRight, Home } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import { ChevronRight, Home } from 'lucide-react';
 
 export default function AppLayout({
     children,
@@ -13,23 +13,29 @@ export default function AppLayout({
         <div className="flex min-h-screen flex-col bg-gradient-to-br from-sky-500 to-fuchsia-500">
             {/* Navbar toujours en haut */}
             <Nav />
-            
+
             {/* Breadcrumbs (si présents) */}
             {breadcrumbs.length > 0 && (
                 <div className="border-b bg-white/10 backdrop-blur-md">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <nav className="flex h-12 items-center space-x-2 text-sm">
-                            <Link href="/" className="flex items-center text-red-600 hover:text-red-700 transition-colors">
+                            <Link
+                                href="/"
+                                className="flex items-center text-red-600 transition-colors hover:text-red-700"
+                            >
                                 <Home className="h-4 w-4" strokeWidth={2.5} />
                             </Link>
-                            
+
                             {breadcrumbs.map((breadcrumb, index) => (
-                                <div key={index} className="flex items-center space-x-2">
+                                <div
+                                    key={index}
+                                    className="flex items-center space-x-2"
+                                >
                                     <ChevronRight className="h-4 w-4 text-white" />
                                     {breadcrumb.href ? (
                                         <Link
                                             href={breadcrumb.href}
-                                            className="text-white font-semibold underline hover:text-blue-600 transition-colors"
+                                            className="font-semibold text-white underline transition-colors hover:text-blue-600"
                                         >
                                             {breadcrumb.title}
                                         </Link>
@@ -44,19 +50,20 @@ export default function AppLayout({
                     </div>
                 </div>
             )}
-            
+
             {/* Contenu principal */}
             <main className="flex-1">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     {children}
                 </div>
             </main>
-            
+
             {/* Footer optionnel */}
             <footer className="border-t bg-white py-6">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <p className="text-center text-sm text-gray-500">
-                        © {new Date().getFullYear()} MyLoc - Plateforme de partage et location
+                        © {new Date().getFullYear()} MyLoc - Plateforme de
+                        partage et location
                     </p>
                 </div>
             </footer>
