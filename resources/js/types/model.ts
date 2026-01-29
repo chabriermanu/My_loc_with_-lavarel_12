@@ -68,8 +68,10 @@ export interface Comment {
     parent_id?: number;
     content: string;
     created_at: string;
-    user: User; // ← Doit pointer vers le bon User
+    user: User;
     replies?: Comment[];
+    likes_count: number;
+    is_liked: boolean;
 }
 
 export interface LaravelPagination<T> {

@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 
-// Déclare route comme fonction globale (fournie par Ziggy)
 declare function route(name: string, params?: any): string;
 
 interface ItemCardProps {
@@ -13,9 +12,22 @@ interface ItemCardProps {
     showActions?: boolean;
 }
 
+
 export default function ItemCard({ item, showActions = false }: ItemCardProps) {
     const { auth } = usePage().props as any;
     const [deletingId, setDeletingId] = useState<number | null>(null);
+
+    // ✅ States locaux avec valeurs par défaut
+    const [localIsLiked, setLocalIsLiked] = useState(item.is_liked ?? false);
+    const [localLikesCount, setLocalLikesCount] = useState(
+        item.likes_count ?? 0,
+    );
+    const [localIsFavorited, setLocalIsFavorited] = useState(
+        item.is_favorited ?? false,
+    );
+    const [localFavoritesCount, setLocalFavoritesCount] = useState(
+        item.favorites_count ?? 0,
+    );
 
     const handleDelete = (itemId: number) => {
         if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?'))
@@ -32,15 +44,32 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
 
     const handleFavorite = (e: React.MouseEvent) => {
         e.preventDefault();
+
+        // ✅ Mise à jour immédiate
+        setLocalIsFavorited(!localIsFavorited);
+        setLocalFavoritesCount(
+            localIsFavorited
+                ? localFavoritesCount - 1
+                : localFavoritesCount + 1,
+        );
+
         router.post(`/items/${item.id}/favorite`);
     };
 
-    const handleLike = (itemId: number) => {
+    const handleLike = (e: React.MouseEvent) => {
+        e.preventDefault();
+
+        // ✅ Mise à jour immédiate
+        setLocalIsLiked(!localIsLiked);
+        setLocalLikesCount(
+            localIsLiked ? localLikesCount - 1 : localLikesCount + 1,
+        );
+
         router.post(
             '/like/toggle',
             {
                 model_type: 'App\\Models\\Item',
-                model_id: itemId,
+                model_id: item.id,
             },
             {
                 preserveScroll: true,
@@ -80,10 +109,12 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                     {item.name}
                 </h3>
             </CardHeader>
+
             <CardContent>
                 <p className="line-clamp-3 text-gray-600 md:line-clamp-4">
                     {item.description}
                 </p>
+
                 {/* Affichage de la catégorie */}
                 {item.category && (
                     <div className="mt-3">
@@ -92,6 +123,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                         </span>
                     </div>
                 )}
+
                 <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
                     {showActions && item.owner && (
                         <span>Par {item.owner.pseudo}</span>
@@ -110,21 +142,19 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleLike(item.id)}
+                            onClick={handleLike}
                             className={`transition-colors ${
-                                item.is_liked
+                                localIsLiked
                                     ? 'text-red-600 hover:text-red-700'
                                     : 'text-gray-600 hover:text-gray-700'
                             }`}
                         >
                             <Heart
                                 className="h-6 w-6"
-                                fill={item.is_liked ? 'currentColor' : 'none'}
+                                fill={localIsLiked ? 'currentColor' : 'none'}
                             />
                         </Button>
-                        <span className="text-gray-600">
-                            {item.likes_count}
-                        </span>
+                        <span className="text-gray-600">{localLikesCount}</span>
                     </div>
 
                     {/* FAVORITE */}
@@ -134,7 +164,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             size="icon"
                             onClick={handleFavorite}
                             className={`transition-colors ${
-                                item.is_favorited
+                                localIsFavorited
                                     ? 'text-yellow-500 hover:text-yellow-600'
                                     : 'text-gray-600 hover:text-gray-700'
                             }`}
@@ -142,12 +172,12 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             <Star
                                 className="h-6 w-6"
                                 fill={
-                                    item.is_favorited ? 'currentColor' : 'none'
+                                    localIsFavorited ? 'currentColor' : 'none'
                                 }
                             />
                         </Button>
                         <span className="text-gray-600">
-                            {item.favorites_count}
+                            {localFavoritesCount}
                         </span>
                     </div>
 
@@ -163,7 +193,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             </Link>
                         </Button>
                         <span className="text-gray-600">
-                            {item.comments_count}
+                            {item.comments_count ?? 0}
                         </span>
                     </div>
                 </div>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Auth;
 
 class Comment extends Model
 {
@@ -59,5 +60,16 @@ class Comment extends Model
     public function replies(): HasMany
     {
         return $this->hasMany(Comment::class, 'parent_id');
+    }
+    protected $appends = ['is_liked'];
+    protected $withCount = ['likes'];
+
+    public function getIsLikedAttribute(): bool
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        return $this->likes()->where('user_id', Auth::id())->exists();
     }
 }

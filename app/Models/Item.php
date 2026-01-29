@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Traits\Likable;
+use Illuminate\Support\Facades\Auth;
 
 class Item extends Model
 {
@@ -83,4 +84,27 @@ class Item extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    protected $appends = ['is_liked', 'is_favorited'];
+
+    protected $withCount = ['likes', 'comments', 'favorites'];
+
+    public function getIsLikedAttribute(): bool
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        return $this->likes()->where('user_id', Auth::id())->exists();
+    }
+
+    public function getIsFavoritedAttribute(): bool
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        return $this->favorites()->where('user_id', Auth::id())->exists();
+    }
 }
+

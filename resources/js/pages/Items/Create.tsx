@@ -16,6 +16,11 @@ export default function Create({
     mediaTypes,
 }: CreateProps) {
     const breadcrumbs: BreadcrumbItem[] = [
+        
+        {
+            title: 'Dashboard',
+            href: route('dashboard'),
+        },
         {
             title: 'Créer un Article',
             href: route('items.create'),

@@ -4,8 +4,20 @@ import AppLayout from '@/layouts/app-layout';
 import { Item } from '@/types/model';
 import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import { BreadcrumbItem } from '../../types';
 
 declare function route(name: string, params?: any): string;
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Dashboard',
+        href: route('dashboard'),
+    },
+    {
+        title: 'Articles',
+        href: route('items.index'),
+    },
+];
 
 interface PaginatedItems {
     data: Item[];
@@ -26,7 +38,7 @@ interface Props {
 
 export default function Index({ items }: Props) {
     return (
-        <AppLayout breadcrumbs={[{ title: 'Articles' }]}>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tous les articles" />
 
             <div className="space-y-6">

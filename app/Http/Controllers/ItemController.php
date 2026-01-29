@@ -108,11 +108,7 @@ class ItemController extends Controller
 
         $item->increment('views_count');
 
-        $isFavorited = Auth::check()
-            ? $item->favorites()->where('user_id', Auth::id())->exists()
-            : false;
-
-        // Vérifier si l'utilisateur a déjà emprunté et restitué cet item
+        // ✅ Plus besoin de calculer isFavorited, c'est déjà dans $item->is_favorited
         $hasCompletedLoan = Auth::check()
             ? $item->loans()
             ->where('borrower_id', Auth::id())
@@ -120,14 +116,13 @@ class ItemController extends Controller
             ->exists()
             : false;
 
-        // Vérifier si l'utilisateur a déjà laissé un avis
         $userReview = Auth::check()
             ? $item->reviews()->where('user_id', Auth::id())->first()
             : null;
 
         return Inertia::render('Items/Show', [
-            'item' => $item,
-            'isFavorited' => $isFavorited,
+            'item' => $item, // ✅ Contient déjà is_liked, is_favorited, likes_count, etc.
+            'isFavorited' => $item->is_favorited, // Pour compatibilité avec votre code actuel
             'hasCompletedLoan' => $hasCompletedLoan,
             'userReview' => $userReview,
         ]);
