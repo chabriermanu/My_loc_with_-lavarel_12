@@ -8,7 +8,9 @@ use App\Http\Requests\UpdateItemRequest;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+
 
 class ItemController extends Controller
 {
@@ -108,7 +110,6 @@ class ItemController extends Controller
 
         $item->increment('views_count');
 
-        // ✅ Plus besoin de calculer isFavorited, c'est déjà dans $item->is_favorited
         $hasCompletedLoan = Auth::check()
             ? $item->loans()
             ->where('borrower_id', Auth::id())
@@ -121,8 +122,8 @@ class ItemController extends Controller
             : null;
 
         return Inertia::render('Items/Show', [
-            'item' => $item, // ✅ Contient déjà is_liked, is_favorited, likes_count, etc.
-            'isFavorited' => $item->is_favorited, // Pour compatibilité avec votre code actuel
+            'item' => $item,
+            'isFavorited' => $item->is_favorited,
             'hasCompletedLoan' => $hasCompletedLoan,
             'userReview' => $userReview,
         ]);
@@ -158,13 +159,23 @@ class ItemController extends Controller
             abort(403, 'Action non autorisée');
         }
 
+        // Gestion de l'image
         if ($request->hasFile('picture')) {
+            // Supprimer l'ancienne image si elle existe
+            if ($item->picture) {
+                Storage::disk('public')->delete($item->picture);
+            }
             $picturePath = $request->file('picture')->store('items', 'public');
         } else {
             $picturePath = $item->picture;
         }
 
+        // Gestion de la vidéo
         if ($request->hasFile('video')) {
+            // Supprimer l'ancienne vidéo si elle existe
+            if ($item->video) {
+                Storage::disk('public')->delete($item->video);
+            }
             $videoPath = $request->file('video')->store('items', 'public');
         } else {
             $videoPath = $item->video;
@@ -198,6 +209,14 @@ class ItemController extends Controller
 
         if ($item->loans()->whereIn('status', ['pending', 'approved', 'in_progress'])->exists()) {
             return redirect()->back()->with('error', 'Impossible de supprimer un item avec des prêts en cours !');
+        }
+
+        // Supprimer les fichiers avant de supprimer l'item
+        if ($item->picture) {
+            Storage::disk('public')->delete($item->picture);
+        }
+        if ($item->video) {
+            Storage::disk('public')->delete($item->video);
         }
 
         $item->delete();

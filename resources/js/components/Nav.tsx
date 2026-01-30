@@ -2,7 +2,15 @@
 
 import type { PageProps } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronDown, LogOut, Menu, Settings, User, X } from 'lucide-react';
+import {
+    ChevronDown,
+    LogOut,
+    Menu,
+    Settings,
+    Shield,
+    User,
+    X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { route } from 'ziggy-js';
 
@@ -76,6 +84,16 @@ export default function Navbar() {
                                 >
                                     Favoris
                                 </Link>
+
+                                {/* Lien Admin - Desktop */}
+                                {auth.user.is_admin && (
+                                    <Link
+                                        href={route('admin.categories.index')}
+                                        className="font-semibold text-red-600 underline transition-colors hover:text-red-700"
+                                    >
+                                        Admin
+                                    </Link>
+                                )}
                             </>
                         )}
                     </div>
@@ -147,6 +165,24 @@ export default function Navbar() {
                                                     <Settings className="mr-3 h-4 w-4" />
                                                     Paramètres
                                                 </Link>
+
+                                                {/* Lien Admin dans le dropdown */}
+                                                {auth.user.is_admin && (
+                                                    <Link
+                                                        href={route(
+                                                            'admin.categories.index',
+                                                        )}
+                                                        className="flex items-center border-t px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+                                                        onClick={() =>
+                                                            setIsDropdownOpen(
+                                                                false,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Shield className="mr-3 h-4 w-4" />
+                                                        Administration
+                                                    </Link>
+                                                )}
 
                                                 <div className="border-t">
                                                     <Link
@@ -238,6 +274,20 @@ export default function Navbar() {
                                 >
                                     Favoris
                                 </Link>
+
+                                {/* Lien Admin - Mobile */}
+                                {auth.user.is_admin && (
+                                    <Link
+                                        href={route('admin.categories.index')}
+                                        className="block rounded-md bg-red-600 px-3 py-2 text-base font-medium text-white transition-colors hover:bg-red-700"
+                                    >
+                                        <div className="flex items-center">
+                                            <Shield className="mr-2 h-5 w-5" />
+                                            Administration
+                                        </div>
+                                    </Link>
+                                )}
+
                                 <Link
                                     href="/items/create"
                                     className="block rounded-md bg-blue-600 px-3 py-2 text-base font-medium text-white transition-colors hover:bg-blue-700"

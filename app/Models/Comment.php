@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class Comment extends Model
 {
     use HasFactory;
-    use Likable;
+
 
     protected $fillable = [
         'item_id',

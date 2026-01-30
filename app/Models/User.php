@@ -30,7 +30,8 @@ class User extends Authenticatable
         'avatar',
         'bio',
         'rating',
-        'total_ratings'
+        'total_ratings',
+        'is_admin'
     ];
 
     /**
@@ -44,6 +45,8 @@ class User extends Authenticatable
         'two_factor_recovery_codes',
         'remember_token',
     ];
+
+
 
     protected $appends = ['name'];
 
@@ -59,7 +62,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'rating' => 'decimal:2',
-            'total_ratings' => 'integer'
+            'total_ratings' => 'integer',
+            'is_admin' => 'boolean',
         ];
     }
 

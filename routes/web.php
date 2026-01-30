@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminCategoryController;
 use App\Models\Item;
 use App\Models\Category;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +132,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('user-reviews', [UserReviewController::class, 'store'])->name('user-reviews.store');
     Route::patch('user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('user-reviews.update');
     Route::delete('user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('user-reviews.destroy');
+
+    Route::middleware(['admin'])->name('admin.')->prefix('admin')->group(function () {
+        Route::resource('categories', AdminCategoryController::class); // ✅ CORRECT
+    });
 });
 
 // ============================================================

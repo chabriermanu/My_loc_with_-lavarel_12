@@ -43,9 +43,16 @@ export default function Index({ items }: Props) {
 
             <div className="space-y-6">
                 {/* Header avec bouton créer */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-center">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">
+                        <h1 className="text-center text-3xl font-semibold underline"
+                            style={{
+                                color: 'white',
+                                WebkitTextStroke: '1.5px #2563eb',
+                                paintOrder: 'stroke fill',
+                                textShadow:
+                                    '0 4px 16px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.6)',
+                            }} >
                             Tous les articles
                         </h1>
                         <p className="mt-2 text-white/80">

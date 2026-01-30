@@ -16,7 +16,7 @@ interface MyItemsProps {
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Mes items', href: undefined },
+    { title: 'Mes items'},
 ];
 
 export default function MyItems({ items }: MyItemsProps) {
@@ -28,7 +28,16 @@ export default function MyItems({ items }: MyItemsProps) {
                 {/* En-tête */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">
+                        <h1
+                            className="text-center text-3xl font-semibold underline"
+                            style={{
+                                color: 'white',
+                                WebkitTextStroke: '1.5px #2563eb',
+                                paintOrder: 'stroke fill',
+                                textShadow:
+                                    '0 4px 16px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.6)',
+                            }}
+                        >
                             Mes items
                         </h1>
                         <p className="mt-2 text-white/80">

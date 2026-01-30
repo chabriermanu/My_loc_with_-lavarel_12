@@ -24,8 +24,8 @@ class UpdateItemRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'picture' => 'nullable|image|max:2048',
-            'video' => 'nullable|mimes:mp4,mov,avi|max:10240',
+            'picture' => 'nullable|image|max:10240',
+            'video' => 'nullable|mimes:mp4,mov,avi|max:1048576',
             'media_type' => 'required|in:image,video,both',
             'category_id' => 'required|exists:categories,id',
             'condition' => 'required|in:new,like_new,good,fair,poor',

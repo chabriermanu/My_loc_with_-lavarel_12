@@ -38,7 +38,7 @@ export default function Welcome({
 
             <div className="min-h-screen bg-gray-50">
                 {/* SECTION HERO */}
-                <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                <div className="bg-linear-to-br from-blue-600 to-blue-800 text-white">
                     <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                         <div className="text-center">
                             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
