@@ -6,32 +6,39 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreItemRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'picture' => 'nullable|image|max:10240',
-            'video' => 'nullable|mimes:mp4,mov,avi|max:1048576',
-            'media_type' => 'required|in:image,video,both',
+            'type' => 'required|in:object,service', // ← AJOUTER
             'category_id' => 'required|exists:categories,id',
-            'condition' => 'required|in:new,like_new,good,fair,poor',
+            'condition' => 'nullable|in:new,like_new,good,fair,poor',
             'value' => 'nullable|numeric|min:0',
+            'media_type' => 'nullable|in:image,video,both',
+            'picture' => 'nullable|image|max:5120', // 5MB max
+            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:51200', // 50MB max
+        ];
+    }
 
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Le nom est obligatoire',
+            'description.required' => 'La description est obligatoire',
+            'type.required' => 'Le type est obligatoire',
+            'type.in' => 'Le type doit être "objet" ou "service"',
+            'category_id.required' => 'La catégorie est obligatoire',
+            'category_id.exists' => 'La catégorie sélectionnée n\'existe pas',
+            'picture.image' => 'Le fichier doit être une image',
+            'picture.max' => 'L\'image ne doit pas dépasser 5MB',
+            'video.mimes' => 'La vidéo doit être au format mp4, mov, avi ou wmv',
+            'video.max' => 'La vidéo ne doit pas dépasser 50MB',
         ];
     }
 }

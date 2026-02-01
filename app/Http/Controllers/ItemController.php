@@ -20,6 +20,7 @@ class ItemController extends Controller
     public function index()
     {
         $items = Item::with(['owner', 'category'])
+            ->withCount(['likes', 'comments']) // ← Ajoute seulement likes et comments
             ->latest()
             ->paginate(12);
 
@@ -65,13 +66,11 @@ class ItemController extends Controller
     public function store(StoreItemRequest $request)
     {
         $picturePath = null;
-
         if ($request->hasFile('picture')) {
             $picturePath = $request->file('picture')->store('items', 'public');
         }
 
         $videoPath = null;
-
         if ($request->hasFile('video')) {
             $videoPath = $request->file('video')->store('items', 'public');
         }
@@ -80,6 +79,7 @@ class ItemController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
+            'type' => $request->type, // ← AJOUTER
             'picture' => $picturePath,
             'video' => $videoPath,
             'media_type' => $request->media_type,
@@ -161,7 +161,6 @@ class ItemController extends Controller
 
         // Gestion de l'image
         if ($request->hasFile('picture')) {
-            // Supprimer l'ancienne image si elle existe
             if ($item->picture) {
                 Storage::disk('public')->delete($item->picture);
             }
@@ -172,7 +171,6 @@ class ItemController extends Controller
 
         // Gestion de la vidéo
         if ($request->hasFile('video')) {
-            // Supprimer l'ancienne vidéo si elle existe
             if ($item->video) {
                 Storage::disk('public')->delete($item->video);
             }
@@ -185,6 +183,7 @@ class ItemController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
+            'type' => $request->type, // ← AJOUTER
             'picture' => $picturePath,
             'video' => $videoPath,
             'media_type' => $request->media_type,

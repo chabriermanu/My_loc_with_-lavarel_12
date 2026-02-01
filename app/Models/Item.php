@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Auth;
 
 class Item extends Model
 {
-    /** @use HasFactory<\Database\Factories\ItemFactory> */
     use HasFactory;
     use Likable;
 
@@ -34,6 +33,7 @@ class Item extends Model
         'total_ratings',
         'views_count',
         'favorites_count',
+        'type',
     ];
 
     protected $casts = [
@@ -44,6 +44,11 @@ class Item extends Model
         'views_count' => 'integer',
         'favorites_count' => 'integer',
     ];
+
+    protected $appends = ['is_liked', 'is_favorited'];
+
+    // ⚠️ SUPPRIME COMPLÈTEMENT CETTE LIGNE
+    // protected $withCount = ['likes', 'comments'];
 
     public function owner(): BelongsTo
     {
@@ -85,10 +90,6 @@ class Item extends Model
         return $this->hasMany(Comment::class);
     }
 
-    protected $appends = ['is_liked', 'is_favorited'];
-
-    protected $withCount = ['likes', 'comments', 'favorites'];
-
     public function getIsLikedAttribute(): bool
     {
         if (!Auth::check()) {
@@ -106,5 +107,14 @@ class Item extends Model
 
         return $this->favorites()->where('user_id', Auth::id())->exists();
     }
-}
 
+    public function scopeObjects($query)
+    {
+        return $query->where('type', 'object');
+    }
+
+    public function scopeServices($query)
+    {
+        return $query->where('type', 'service');
+    }
+}

@@ -31,6 +31,7 @@ export default function Edit({
     const { data, setData, put, processing, errors } = useForm<PostFormData>({
         name: item.name || '',
         description: item.description || '',
+        type: (item.type as 'object' | 'service') || 'object', // ← AJOUTÉ
         category_id: item.category_id?.toString() || '',
         condition: item.condition || '',
         media_type: item.media_type || '',
@@ -72,7 +73,6 @@ export default function Edit({
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        // ⚠️ Utilise PUT au lieu de POST
         put(route('items.update', item.id));
     };
 
@@ -88,6 +88,48 @@ export default function Edit({
                             </h2>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Type - NOUVEAU */}
+                                <div className="space-y-2">
+                                    <Label>Type *</Label>
+                                    <div className="flex gap-6">
+                                        <label className="flex cursor-pointer items-center space-x-2">
+                                            <input
+                                                type="radio"
+                                                value="object"
+                                                checked={data.type === 'object'}
+                                                onChange={() =>
+                                                    setData('type', 'object')
+                                                }
+                                                className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700">
+                                                📦 Objet à louer
+                                            </span>
+                                        </label>
+                                        <label className="flex cursor-pointer items-center space-x-2">
+                                            <input
+                                                type="radio"
+                                                value="service"
+                                                checked={
+                                                    data.type === 'service'
+                                                }
+                                                onChange={() =>
+                                                    setData('type', 'service')
+                                                }
+                                                className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700">
+                                                📋 Service à proposer
+                                            </span>
+                                        </label>
+                                    </div>
+                                    {errors.type && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.type}
+                                        </p>
+                                    )}
+                                </div>
+
                                 {/* Titre */}
                                 <div className="space-y-2">
                                     <Label htmlFor="titre">Titre *</Label>
@@ -156,7 +198,7 @@ export default function Edit({
                                                 key={category.id}
                                                 value={category.id}
                                             >
-                                                {category.name}
+                                                {category.icon} {category.name}
                                             </option>
                                         ))}
                                     </select>
@@ -167,49 +209,79 @@ export default function Edit({
                                     )}
                                 </div>
 
-                                {/* Condition */}
+                                {/* Valeur - Label dynamique */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="condition">État *</Label>
-                                    <select
-                                        id="condition"
-                                        value={data.condition}
+                                    <Label htmlFor="value">
+                                        {data.type === 'service'
+                                            ? 'Prix de la prestation (€)'
+                                            : 'Prix par jour (€)'}
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        id="value"
+                                        value={data.value}
                                         onChange={(e) =>
-                                            setData('condition', e.target.value)
+                                            setData('value', e.target.value)
                                         }
-                                        className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
-                                        required
-                                    >
-                                        <option value="">
-                                            -- Sélectionnez un état --
-                                        </option>
-                                        {conditions.map((condition) => (
-                                            <option
-                                                key={condition}
-                                                value={condition}
-                                            >
-                                                {condition === 'new' && 'Neuf'}
-                                                {condition === 'like_new' &&
-                                                    'Comme neuf'}
-                                                {condition === 'good' &&
-                                                    'Bon état'}
-                                                {condition === 'fair' &&
-                                                    'État correct'}
-                                                {condition === 'poor' &&
-                                                    'Mauvais état'}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.condition && (
+                                        min="0"
+                                        step="0.01"
+                                        className="block overflow-hidden border bg-white px-3 py-2 text-sm shadow-sm sm:rounded-lg"
+                                    />
+                                    {errors.value && (
                                         <p className="text-sm text-red-500">
-                                            {errors.condition}
+                                            {errors.value}
                                         </p>
                                     )}
                                 </div>
 
+                                {/* Condition - Uniquement pour les objets */}
+                                {data.type === 'object' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="condition">État</Label>
+                                        <select
+                                            id="condition"
+                                            value={data.condition}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'condition',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
+                                        >
+                                            <option value="">
+                                                -- Sélectionnez un état --
+                                            </option>
+                                            {conditions.map((condition) => (
+                                                <option
+                                                    key={condition}
+                                                    value={condition}
+                                                >
+                                                    {condition === 'new' &&
+                                                        'Neuf'}
+                                                    {condition === 'like_new' &&
+                                                        'Comme neuf'}
+                                                    {condition === 'good' &&
+                                                        'Bon état'}
+                                                    {condition === 'fair' &&
+                                                        'État correct'}
+                                                    {condition === 'poor' &&
+                                                        'Mauvais état'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.condition && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.condition}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Type de média */}
                                 <div className="space-y-2">
                                     <Label htmlFor="media_type">
-                                        Type de média *
+                                        Type de média
                                     </Label>
                                     <select
                                         id="media_type"
@@ -221,7 +293,6 @@ export default function Edit({
                                             )
                                         }
                                         className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
-                                        required
                                     >
                                         <option value="">
                                             -- Sélectionnez un type --
@@ -240,29 +311,6 @@ export default function Edit({
                                     {errors.media_type && (
                                         <p className="text-sm text-red-500">
                                             {errors.media_type}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Valeur */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="value">
-                                        Valeur estimée (€)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        id="value"
-                                        value={data.value}
-                                        onChange={(e) =>
-                                            setData('value', e.target.value)
-                                        }
-                                        min="0"
-                                        step="0.01"
-                                        className="block overflow-hidden border bg-white px-3 py-2 text-sm shadow-sm sm:rounded-lg"
-                                    />
-                                    {errors.value && (
-                                        <p className="text-sm text-red-500">
-                                            {errors.value}
                                         </p>
                                     )}
                                 </div>

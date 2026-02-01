@@ -10,7 +10,7 @@ export default function AppLayout({
     breadcrumbs = [],
 }: AppLayoutProps) {
     return (
-        <div className="flex min-h-screen flex-col bg-gradient-to-br from-sky-500 to-fuchsia-500">
+        <div className="flex min-h-screen flex-col bg-linear-to-br from-sky-500 to-fuchsia-500">
             {/* Navbar toujours en haut */}
             <Nav />
 

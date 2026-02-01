@@ -25,40 +25,22 @@ use Laravel\Fortify\Features;
 Route::get('/', function () {
     // Items les mieux notés (pour le scroll horizontal)
     $topRatedItems = Item::with(['category', 'owner'])
-        ->withCount(['likes', 'comments', 'favorites'])
+        ->withCount(['likes', 'comments'])
         ->where('is_available', true)
         ->whereNotNull('rating')
         ->where('total_ratings', '>', 0)
         ->orderByDesc('rating')
         ->orderByDesc('total_ratings')
         ->take(12)
-        ->get()
-        ->map(function ($item) {
-            $item->is_liked = Auth::check()
-                ? $item->likes()->where('user_id', Auth::id())->exists()
-                : false;
-            $item->is_favorited = Auth::check()
-                ? $item->favorites()->where('user_id', Auth::id())->exists()
-                : false;
-            return $item;
-        });
+        ->get();
 
     // Items récents (pour une autre section)
     $recentItems = Item::with(['category', 'owner'])
-        ->withCount(['likes', 'comments', 'favorites'])
+        ->withCount(['likes', 'comments'])
         ->where('is_available', true)
         ->latest()
         ->take(8)
-        ->get()
-        ->map(function ($item) {
-            $item->is_liked = Auth::check()
-                ? $item->likes()->where('user_id', Auth::id())->exists()
-                : false;
-            $item->is_favorited = Auth::check()
-                ? $item->favorites()->where('user_id', Auth::id())->exists()
-                : false;
-            return $item;
-        });
+        ->get();
 
     // Catégories les plus vues (basées sur le nombre d'items)
     $popularCategories = Category::withCount('items')
@@ -76,6 +58,10 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('items', [ItemController::class, 'index'])->name('items.index');
+
+// Routes catégories par type (AVANT la route générique)
+Route::get('categories/objets', [CategoryController::class, 'indexObjects'])->name('categories.objects');
+Route::get('categories/services', [CategoryController::class, 'indexServices'])->name('categories.services');
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 
 // ============================================================
@@ -133,8 +119,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('user-reviews.update');
     Route::delete('user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('user-reviews.destroy');
 
+    // Routes Admin
     Route::middleware(['admin'])->name('admin.')->prefix('admin')->group(function () {
-        Route::resource('categories', AdminCategoryController::class); // ✅ CORRECT
+        Route::resource('categories', AdminCategoryController::class);
     });
 });
 
@@ -145,7 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ⚠️ Ces routes DOIVENT être après items/create et items/{item}/edit
 Route::get('items/{item}', [ItemController::class, 'show'])
     ->name('items.show')
-    ->where('item', '[0-9]+'); // Accepte uniquement des chiffres
+    ->where('item', '[0-9]+');
 
 Route::get('categories/{category}', [CategoryController::class, 'show'])
     ->name('categories.show');

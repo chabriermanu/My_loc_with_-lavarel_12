@@ -19,6 +19,7 @@ export interface Item {
     description: string;
     picture?: string;
     video?: string;
+    type: 'object' | 'service';
     media_type: 'image' | 'video' | 'both';
     user_id: number;
     category_id: number;
@@ -105,6 +106,7 @@ export type PaginatedData<T> = {
 export interface PostFormData {
     name: string;
     description: string;
+    type: 'object' | 'service';
     category_id: string;
     condition?: string;
     media_type?: string;

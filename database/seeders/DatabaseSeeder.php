@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;  // ← AJOUTE CETTE LIGNE
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,14 +17,6 @@ class DatabaseSeeder extends Seeder
         // Appelle le CategorySeeder
         $this->call([
             CategorySeeder::class,
-        ]);
-
-        // Crée un utilisateur de test
-
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
         ]);
     }
 }
