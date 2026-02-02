@@ -18,7 +18,9 @@ class Loan extends Model
         'owner_id',
         'borrower_id',
         'start_date',
+        'start_time',
         'end_date',
+        'end_time',
         'status',
         'returned_at',
         'notes'
@@ -27,6 +29,8 @@ class Loan extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'start_time'=>'datetime:H:i',
+        'end_time'=>'datetime:H:i',
         'returned_at' => 'datetime'
     ];
 

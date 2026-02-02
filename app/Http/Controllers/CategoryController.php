@@ -32,6 +32,10 @@ class CategoryController extends Controller
         ->orderBy('name')
         ->paginate(12)
         ->withQueryString();
+    
+    // Debug: vérifiez que les IDs existent
+    // dd($categories->pluck('id'));
+
 
     return Inertia::render('Categories/Index', [
         'categories' => $categories,

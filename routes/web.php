@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Routes Loans
     Route::resource('loans', LoanController::class)->only(['index', 'store', 'show']);
+    Route::patch('loans/{loan}', [LoanController::class, 'update'])->name('loans.update');
     Route::patch('loans/{loan}/approve', [LoanController::class, 'approve'])->name('loans.approve');
     Route::patch('loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::patch('loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');

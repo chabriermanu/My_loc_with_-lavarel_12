@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Loan;
 use App\Http\Requests\StoreLoanRequest;
+use App\Http\Requests\UpdateLoanRequest;
 use App\Models\Item;
 use Illuminate\Support\Facades\Auth;
 
@@ -51,7 +52,9 @@ class LoanController extends Controller
             'owner_id' => $item->user_id,
             'borrower_id' => Auth::id(),
             'start_date' => $request->start_date,
+            'start_time'=>$request->start_time,
             'end_date' => $request->end_date,
+            'end_time'=>$request->end_time,
             'status' => 'pending',
             'notes' => $request->notes,
         ]);
@@ -59,6 +62,47 @@ class LoanController extends Controller
         return redirect()->route('loans.index')
             ->with('success', 'Demande prêt envoyée !');
     }
+
+        public function update(UpdateLoanRequest $request, Loan $loan)
+    {
+        // Sécurité supplémentaire (en plus de UpdateLoanRequest)
+        if (!($request->user()->id === $loan->borrower_id || $request->user()->id === $loan->owner_id)) {
+            abort(403, 'Action non autorisée');
+        }
+
+        // Vérifier que le prêt peut être modifié selon son statut
+        if (!in_array($loan->status, ['pending', 'approved', 'in_progress'])) {
+            return back()->with('error', 'Ce prêt ne peut plus être modifié.');
+        }
+
+        // Vérifier disponibilité (pas de chevauchement)
+        $conflict = Loan::where('item_id', $loan->item_id)
+            ->where('id', '!=', $loan->id)
+            ->whereIn('status', ['approved', 'in_progress'])
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('start_date', '<=', $request->end_date)
+                    ->where('end_date', '>=', $request->start_date);
+                });
+            })
+            ->exists();
+
+        if ($conflict) {
+            return back()->with('error', 'L\'item n\'est pas disponible sur cette période.');
+        }
+
+        // Mise à jour
+        $loan->update([
+            'start_date' => $request->start_date,
+            'start_time' => $request->start_time,
+            'end_date'   => $request->end_date,
+            'end_time'   => $request->end_time,
+            'notes'      => $request->notes,
+        ]);
+
+        return back()->with('success', 'Le prêt a été mis à jour avec succès.');
+    }
+
 
     /**
      * Display the specified resource.
@@ -128,4 +172,6 @@ class LoanController extends Controller
         $loan->update(['status' => 'completed', 'returned_at' => now()]);
         return back()->with('success', 'Pret a été restituer avec succès !');
     }
+
+    
 }
