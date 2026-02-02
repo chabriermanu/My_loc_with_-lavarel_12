@@ -1,9 +1,9 @@
-import CommentSection from '@/components/Commentsection';
+import CommentSection from '@/components/CommentSection';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, ShowProps } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { Heart, Star, StarOff } from 'lucide-react';
+import { Head, router, Link } from '@inertiajs/react';
+import { Heart, Star, StarOff, Mail, User } from 'lucide-react';
 import { useState } from 'react';
 
 declare function route(name: string, params?: any): string;
@@ -66,7 +66,7 @@ export default function Show({
                 : localFavoritesCount + 1,
         );
 
-        router.post(route('items.favorite', item.id));
+        router.post(route('favorites.toggle', item.id));
     };
 
     const handleLike = () => {
@@ -129,22 +129,104 @@ export default function Show({
                                 {item.description}
                             </p>
 
-                            {/* CATÉGORIE */}
-                            {item.category && (
-                                <div className="mb-4">
-                                    <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                                        {item.category.name}
+                            {/* INFORMATIONS SUPPLÉMENTAIRES */}
+                            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+                                {/* CATÉGORIE */}
+                                {item.category && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-500">
+                                            Catégorie:
+                                        </span>
+                                        <Link
+                                            href={route('categories.show', item.category.id)}
+                                            className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 transition hover:bg-blue-200"
+                                        >
+                                            {item.category.icon && (
+                                                <span className="mr-1">{item.category.icon}</span>
+                                            )}
+                                            {item.category.name}
+                                        </Link>
+                                    </div>
+                                )}
+
+                                {/* TYPE */}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-500">
+                                        Type:
+                                    </span>
+                                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+                                        item.type === 'service'
+                                            ? 'bg-blue-100 text-blue-800'
+                                            : 'bg-green-100 text-green-800'
+                                    }`}>
+                                        {item.type === 'service' ? '📋 Service' : '📦 Objet'}
                                     </span>
                                 </div>
-                            )}
 
-                            {/* PROPRIÉTAIRE */}
+                                {/* PRIX */}
+                                {item.value && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-500">
+                                            Prix:
+                                        </span>
+                                        <span className="text-lg font-bold text-green-600">
+                                            {item.value} €
+                                            <span className="text-sm font-normal text-gray-500">
+                                                {item.type === 'service' ? ' / prestation' : ' / jour'}
+                                            </span>
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* CONDITION (si objet) */}
+                                {item.type === 'object' && item.condition && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-500">
+                                            État:
+                                        </span>
+                                        <span className="rounded-full bg-gray-100 px-3 py-1 text-sm capitalize text-gray-800">
+                                            {item.condition === 'new' && '🆕 Neuf'}
+                                            {item.condition === 'like_new' && '✨ Comme neuf'}
+                                            {item.condition === 'good' && '👍 Bon état'}
+                                            {item.condition === 'fair' && '👌 État correct'}
+                                            {item.condition === 'poor' && '🔧 À réparer'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                           {/* PROPRIÉTAIRE */}
                             {item.owner && (
-                                <div className="mb-4 text-sm text-gray-600">
-                                    Par{' '}
-                                    <span className="font-semibold">
-                                        {item.owner.pseudo}
-                                    </span>
+                                <div className="mb-6 rounded-lg border bg-gray-50 p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                                <User className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">
+                                                    Proposé par
+                                                </p>
+                                                <p className="font-semibold text-gray-900">
+                                                    {item.owner.pseudo}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Bouton contacter - Visible seulement si connecté ET pas son item */}
+                                        {auth.user && auth.user.id !== item.user_id && (
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                    router.visit(route('loans.create', { item: item.id }));
+                                                }}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Mail className="h-4 w-4" />
+                                                Demander
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -272,7 +354,7 @@ export default function Show({
                         </div>
                     )}
 
-                    {/* ✅ SECTION COMMENTS - Utilisez votre composant */}
+                    {/* ✅ SECTION COMMENTS */}
                     <div
                         id="comments"
                         className="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg"
@@ -280,6 +362,7 @@ export default function Show({
                         <div className="p-6">
                             <CommentSection
                                 itemId={item.id}
+                                itemOwnerId={item.user_id}
                                 comments={item.comments || []}
                                 currentUser={auth.user}
                             />

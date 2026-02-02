@@ -135,6 +135,7 @@ Route::get('items/{item}', [ItemController::class, 'show'])
     ->where('item', '[0-9]+');
 
 Route::get('categories/{category}', [CategoryController::class, 'show'])
-    ->name('categories.show');
+    ->name('categories.show')
+    ->where('category', '[0-9]+');
 
 require __DIR__ . '/settings.php';

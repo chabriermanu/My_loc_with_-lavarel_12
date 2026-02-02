@@ -3,6 +3,7 @@ import { dashboard, login, register } from '@/routes';
 import type { SharedData } from '@/types';
 import type { Category, Item } from '@/types/model';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { route } from 'ziggy-js';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -38,7 +39,7 @@ export default function Welcome({
 
             <div className="min-h-screen bg-gray-50">
                 {/* SECTION HERO */}
-                <div className="bg-linear-to-br from-blue-600 to-blue-800 text-white">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
                     <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                         <div className="text-center">
                             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
@@ -94,12 +95,14 @@ export default function Welcome({
                                     <button
                                         onClick={() => scroll('left')}
                                         className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+                                        aria-label="Défiler vers la gauche"
                                     >
                                         <ChevronLeft className="h-6 w-6" />
                                     </button>
                                     <button
                                         onClick={() => scroll('right')}
                                         className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+                                        aria-label="Défiler vers la droite"
                                     >
                                         <ChevronRight className="h-6 w-6" />
                                     </button>
@@ -149,7 +152,7 @@ export default function Welcome({
                             </h2>
                             {popularCategories.length > 0 && (
                                 <Link
-                                    href="/categories"
+                                    href={route('categories.index')}
                                     className="font-medium text-blue-600 hover:text-blue-700"
                                 >
                                     Voir tout →
@@ -160,35 +163,38 @@ export default function Welcome({
                         {/* CONTENU OU MESSAGE VIDE */}
                         {popularCategories.length > 0 ? (
                             <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                                {popularCategories.map((category) => (
-                                    <Link
-                                        key={category.id}
-                                        href={`/categories/${category.slug}`}
-                                        className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl"
-                                    >
-                                        {/* Badge du nombre d'items */}
-                                        <div className="absolute top-4 right-4 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
-                                            {category.items_count}
-                                        </div>
+                                {popularCategories
+                                    .filter(category => category.id) // ✅ Filtrer les catégories sans ID
+                                    .map((category) => (
+                                        <Link
+                                            key={category.id}
+                                            href={route('categories.show', category.id)} // ✅ Utilisez route() avec l'ID
+                                            className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl"
+                                        >
+                                            {/* Badge du nombre d'items */}
+                                            <div className="absolute top-4 right-4 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
+                                                {category.items_count || 0}
+                                            </div>
 
-                                        {/* Icône ou emoji */}
-                                        <div className="mb-4 text-4xl">
-                                            {category.icon || '📦'}
-                                        </div>
+                                            {/* Icône ou emoji */}
+                                            <div className="mb-4 text-4xl">
+                                                {category.icon || '📦'}
+                                            </div>
 
-                                        {/* Nom de la catégorie */}
-                                        <h3 className="text-lg font-bold text-gray-900 transition group-hover:text-blue-600">
-                                            {category.name}
-                                        </h3>
+                                            {/* Nom de la catégorie */}
+                                            <h3 className="text-lg font-bold text-gray-900 transition group-hover:text-blue-600">
+                                                {category.name}
+                                            </h3>
 
-                                        {/* Description */}
-                                        {category.description && (
-                                            <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                                                {category.description}
-                                            </p>
-                                        )}
-                                    </Link>
-                                ))}
+                                            {/* Description */}
+                                            {category.description && (
+                                                <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                                                    {category.description}
+                                                </p>
+                                            )}
+                                        </Link>
+                                    ))
+                                }
                             </div>
                         ) : (
                             <div className="py-12 text-center">
@@ -210,7 +216,7 @@ export default function Welcome({
                             </h2>
                             {recentItems.length > 0 && (
                                 <Link
-                                    href="/items"
+                                    href={route('items.index')}
                                     className="font-medium text-blue-600 hover:text-blue-700"
                                 >
                                     Voir tout →

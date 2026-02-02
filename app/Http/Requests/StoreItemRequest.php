@@ -21,8 +21,8 @@ class StoreItemRequest extends FormRequest
             'condition' => 'nullable|in:new,like_new,good,fair,poor',
             'value' => 'nullable|numeric|min:0',
             'media_type' => 'nullable|in:image,video,both',
-            'picture' => 'nullable|image|max:5120', // 5MB max
-            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:51200', // 50MB max
+            'picture' => 'nullable|image|max:10240', // 5MB max
+            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:1048576', // 50MB max
         ];
     }
 

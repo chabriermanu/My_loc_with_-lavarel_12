@@ -6,106 +6,130 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
     /**
-     * Affiche toutes les catégories avec leurs items
-     */
-    /**
-     * Affiche toutes les catégories (mixte objets + services)
+     * Affiche toutes les catégories avec leurs 4 meilleurs items
      */
     public function index()
     {
         $categories = Category::with(['items' => function ($query) {
             $query->with('owner')
-                ->withCount(['likes', 'comments'])
                 ->where('is_available', true)
-                ->latest()
-                ->take(4);
-        }])
-            ->withCount('items')
-            ->orderBy('name')
-            ->get();
+                ->orderByRaw('
+                (
+                    COALESCE(average_rating, 0) * 0.3 +
+                    (COALESCE(views_count, 0) / 100) * 0.2 +
+                    (SELECT COUNT(*) FROM comments WHERE comments.item_id = items.id) * 0.25 +
+                    (SELECT COUNT(*) FROM likes WHERE likes.likeable_id = items.id AND likes.likeable_type = "App\\\\Models\\\\Item") * 0.25
+                ) DESC
+            ')
+            ->take(4);
+    }])
+        ->withCount('items')
+        ->orderBy('name')
+        ->paginate(12)
+        ->withQueryString();
 
-        return Inertia::render('Categories/Index', [
-            'categories' => $categories,
-            'type' => 'all'
-        ]);
-    }
+    return Inertia::render('Categories/Index', [
+        'categories' => $categories,
+        'type' => 'all'
+    ]);
+}
 
     /**
-     * Affiche uniquement les catégories d'OBJETS
+     * Affiche uniquement les catégories d'OBJETS avec leurs 4 meilleurs items
      */
     public function indexObjects()
-    {
-        $categories = Category::with(['items' => function ($query) {
-            $query->with('owner')
-                ->withCount(['likes', 'comments'])
-                ->where('is_available', true)
-                ->where('type', 'object') // ← Filtre objets
-                ->latest()
-                ->take(4);
+{
+    $categories = Category::with(['items' => function ($query) {
+        $query->with('owner')
+            ->where('is_available', true)
+            ->where('type', 'object')
+            ->orderByRaw('
+                (
+                    COALESCE(average_rating, 0) * 0.3 +
+                    (COALESCE(views_count, 0) / 100) * 0.2 +
+                    (SELECT COUNT(*) FROM comments WHERE comments.item_id = items.id) * 0.25 +
+                    (SELECT COUNT(*) FROM likes WHERE likes.likeable_id = items.id AND likes.likeable_type = "App\\\\Models\\\\Item") * 0.25
+                ) DESC
+            ')
+            ->take(4);
+    }])
+        ->whereHas('items', function ($query) {
+            $query->where('type', 'object');
+        })
+        ->withCount(['items' => function ($query) {
+            $query->where('type', 'object');
         }])
-            ->whereHas('items', function ($query) {
-                $query->where('type', 'object');
-            })
-            ->withCount(['items' => function ($query) {
-                $query->where('type', 'object');
-            }])
-            ->orderBy('name')
-            ->get();
+        ->orderBy('name')
+        ->paginate(12)
+        ->withQueryString();
 
-        return Inertia::render('Categories/Index', [
-            'categories' => $categories,
-            'type' => 'object'
-        ]);
-    }
+    return Inertia::render('Categories/Index', [
+        'categories' => $categories,
+        'type' => 'object'
+    ]);
+}
 
-    /**
-     * Affiche uniquement les catégories de SERVICES
-     */
-    public function indexServices()
-    {
-        $categories = Category::with(['items' => function ($query) {
-            $query->with('owner')
-                ->withCount(['likes', 'comments'])
-                ->where('is_available', true)
-                ->where('type', 'service') // ← Filtre services
-                ->latest()
-                ->take(4);
+public function indexServices()
+{
+    $categories = Category::with(['items' => function ($query) {
+        $query->with('owner')
+            ->where('is_available', true)
+            ->where('type', 'service')
+            ->orderByRaw('
+                (
+                    COALESCE(average_rating, 0) * 0.3 +
+                    (COALESCE(views_count, 0) / 100) * 0.2 +
+                    (SELECT COUNT(*) FROM comments WHERE comments.item_id = items.id) * 0.25 +
+                    (SELECT COUNT(*) FROM likes WHERE likes.likeable_id = items.id AND likes.likeable_type = "App\\\\Models\\\\Item") * 0.25
+                ) DESC
+            ')
+            ->take(4);
+    }])
+        ->whereHas('items', function ($query) {
+            $query->where('type', 'service');
+        })
+        ->withCount(['items' => function ($query) {
+            $query->where('type', 'service');
         }])
-            ->whereHas('items', function ($query) {
-                $query->where('type', 'service');
-            })
-            ->withCount(['items' => function ($query) {
-                $query->where('type', 'service');
-            }])
-            ->orderBy('name')
-            ->get();
+        ->orderBy('name')
+        ->paginate(12)
+        ->withQueryString();
 
-        return Inertia::render('Categories/Index', [
-            'categories' => $categories,
-            'type' => 'service'
-        ]);
-    }
+    return Inertia::render('Categories/Index', [
+        'categories' => $categories,
+        'type' => 'service'
+    ]);
+}
     /**
      * Affiche une catégorie spécifique avec tous ses items (paginés)
      */
     public function show(Category $category)
-    {
-        $items = $category->items()
-            ->with(['owner', 'category'])
+{
+    $items = $category->items()
+        ->with(['owner', 'category'])
+        ->where('is_available', true)
+        ->selectRaw('
+            items.*,
+            (
+                COALESCE(average_rating, 0) * 0.3 +
+                (COALESCE(views_count, 0) / 100) * 0.2 +
+                COALESCE(comments_count, 0) * 0.25 +
+                COALESCE(likes_count, 0) * 0.25
+            ) as popularity_score
+        ')
+        ->orderByDesc('popularity_score')
+        ->paginate(12);
 
-            ->where('is_available', true)
-            ->latest()
-            ->paginate(12);
-
-        return Inertia::render('Categories/Show', [
-            'category' => $category,
-            'items' => $items
-        ]);
-    }
+    return Inertia::render('Categories/Show', [
+        'category' => $category,
+        'items' => $items
+    ]);
+}
 
     /**
      * Affiche le formulaire de création (pour admin)

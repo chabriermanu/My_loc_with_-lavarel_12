@@ -1,4 +1,4 @@
-import type { Item } from '@/types/model';
+import type { ItemCardProps } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Edit, Eye, Heart, MessageCircle, Star, Trash } from 'lucide-react';
 import { useState } from 'react';
@@ -6,12 +6,6 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 
 declare function route(name: string, params?: any): string;
-
-interface ItemCardProps {
-    item: Item;
-    showActions?: boolean;
-}
-
 
 export default function ItemCard({ item, showActions = false }: ItemCardProps) {
     const { auth } = usePage().props as any;
@@ -78,7 +72,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
         );
     };
 
-    const canEditItem = (item: Item) => auth.user?.id === item.user_id;
+    const canEditItem = () => auth.user?.id === item.user_id;
 
     return (
         <Card className="overflow-hidden">
@@ -137,58 +131,70 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
             <CardFooter className="flex items-center justify-between">
                 {/* LEFT SIDE : LIKE + FAVORITE + COMMENTS */}
                 <div className="flex items-center space-x-3">
-                    {/* LIKE */}
-                    <div className="flex items-center space-x-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleLike}
-                            className={`transition-colors ${
-                                localIsLiked
-                                    ? 'text-red-600 hover:text-red-700'
-                                    : 'text-gray-600 hover:text-gray-700'
-                            }`}
-                        >
-                            <Heart
-                                className="h-6 w-6"
-                                fill={localIsLiked ? 'currentColor' : 'none'}
-                            />
-                        </Button>
-                        <span className="text-gray-600">{localLikesCount}</span>
-                    </div>
+                    {/* ✅ LIKE - Seulement si ce n'est PAS son item */}
+                    {auth.user?.id !== item.user_id ? (
+                        <div className="flex items-center space-x-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleLike}
+                                className={`transition-colors ${
+                                    localIsLiked
+                                        ? 'text-red-600 hover:text-red-700'
+                                        : 'text-gray-600 hover:text-gray-700'
+                                }`}
+                            >
+                                <Heart
+                                    className="h-6 w-6"
+                                    fill={localIsLiked ? 'currentColor' : 'none'}
+                                />
+                            </Button>
+                            <span className="text-gray-600">{localLikesCount}</span>
+                        </div>
+                    ) : (
+                        // Si c'est son item, afficher juste le compteur
+                        localLikesCount > 0 && (
+                            <div className="flex items-center space-x-1">
+                                <Heart className="h-6 w-6 text-gray-400" />
+                                <span className="text-gray-600">{localLikesCount}</span>
+                            </div>
+                        )
+                    )}
 
-                    {/* FAVORITE */}
-                    <div className="flex items-center space-x-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleFavorite}
-                            className={`transition-colors ${
-                                localIsFavorited
-                                    ? 'text-yellow-500 hover:text-yellow-600'
-                                    : 'text-gray-600 hover:text-gray-700'
-                            }`}
-                        >
-                            <Star
-                                className="h-6 w-6"
-                                fill={
-                                    localIsFavorited ? 'currentColor' : 'none'
-                                }
-                            />
-                        </Button>
-                        <span className="text-gray-600">
-                            {localFavoritesCount}
-                        </span>
-                    </div>
+                    {/* ✅ FAVORITE - Seulement si ce n'est PAS son item */}
+                    {auth.user?.id !== item.user_id ? (
+                        <div className="flex items-center space-x-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleFavorite}
+                                className={`transition-colors ${
+                                    localIsFavorited
+                                        ? 'text-yellow-500 hover:text-yellow-600'
+                                        : 'text-gray-600 hover:text-gray-700'
+                                }`}
+                            >
+                                <Star
+                                    className="h-6 w-6"
+                                    fill={localIsFavorited ? 'currentColor' : 'none'}
+                                />
+                            </Button>
+                            <span className="text-gray-600">{localFavoritesCount}</span>
+                        </div>
+                    ) : (
+                        // Si c'est son item, afficher juste le compteur
+                        localFavoritesCount > 0 && (
+                            <div className="flex items-center space-x-1">
+                                <Star className="h-6 w-6 text-gray-400" />
+                                <span className="text-gray-600">{localFavoritesCount}</span>
+                            </div>
+                        )
+                    )}
 
-                    {/* COMMENTS */}
+                    {/* COMMENTS - Toujours visible (pour voir les commentaires) */}
                     <div className="flex items-center space-x-1">
                         <Button variant="ghost" size="icon" asChild>
-                            <Link
-                                href={
-                                    route('items.show', item.id) + '#comments'
-                                }
-                            >
+                            <Link href={route('items.show', item.id) + '#comments'}>
                                 <MessageCircle className="h-6 w-6" />
                             </Link>
                         </Button>
@@ -206,7 +212,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                         </Link>
                     </Button>
 
-                    {canEditItem(item) && (
+                    {canEditItem() && (
                         <>
                             <Button variant="ghost" asChild>
                                 <Link href={route('items.edit', item.id)}>

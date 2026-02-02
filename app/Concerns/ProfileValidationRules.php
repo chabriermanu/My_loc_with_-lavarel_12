@@ -2,49 +2,39 @@
 
 namespace App\Concerns;
 
-use App\Models\User;
 use Illuminate\Validation\Rule;
 
 trait ProfileValidationRules
 {
     /**
-     * Get the validation rules used to validate user profiles.
+     * Get the validation rules for profile information.
      *
-     * @return array<string, array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>>
+     * @param  int|null  $userId
+     * @return array<string, array<mixed>>
      */
-    protected function profileRules(?int $userId = null): array
+    public function profileRules(?int $userId = null): array
     {
         return [
-            'name' => $this->nameRules(),
-            'email' => $this->emailRules($userId),
-        ];
-    }
-
-    /**
-     * Get the validation rules used to validate user names.
-     *
-     * @return array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>
-     */
-    protected function nameRules(): array
-    {
-        return ['required', 'string', 'max:255'];
-    }
-
-    /**
-     * Get the validation rules used to validate user emails.
-     *
-     * @return array<int, \Illuminate\Contracts\Validation\Rule|array<mixed>|string>
-     */
-    protected function emailRules(?int $userId = null): array
-    {
-        return [
-            'required',
-            'string',
-            'email',
-            'max:255',
-            $userId === null
-                ? Rule::unique(User::class)
-                : Rule::unique(User::class)->ignore($userId),
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                $userId 
+                    ? Rule::unique('users', 'pseudo')->ignore($userId)
+                    : 'unique:users,pseudo'
+            ],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                $userId 
+                    ? Rule::unique('users')->ignore($userId) // ← FIX ICI
+                    : 'unique:users'
+            ],
+            'first_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

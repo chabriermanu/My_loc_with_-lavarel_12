@@ -27,7 +27,7 @@ export default function Register() {
                         <div className="grid gap-6">
                             {/* PSEUDO */}
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Pseudo</Label>
+                                <Label htmlFor="name">Pseudo *</Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -36,53 +36,45 @@ export default function Register() {
                                     tabIndex={1}
                                     autoComplete="username"
                                     name="name"
-                                    placeholder="Choisissez un pseudo"
+                                    placeholder="Choisissez un pseudo unique"
                                 />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
+                                <InputError message={errors.name} className="mt-2" />
                             </div>
 
-                            {/* PRÉNOM */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="first_name">Prénom</Label>
-                                <Input
-                                    id="first_name"
-                                    type="text"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="given-name"
-                                    name="first_name"
-                                    placeholder="Votre prénom"
-                                />
-                                <InputError
-                                    message={errors.first_name}
-                                    className="mt-2"
-                                />
-                            </div>
+                            {/* PRÉNOM ET NOM SUR LA MÊME LIGNE */}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                {/* PRÉNOM */}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="first_name">Prénom</Label>
+                                    <Input
+                                        id="first_name"
+                                        type="text"
+                                        tabIndex={2}
+                                        autoComplete="given-name"
+                                        name="first_name"
+                                        placeholder="Votre prénom"
+                                    />
+                                    <InputError message={errors.first_name} className="mt-2" />
+                                </div>
 
-                            {/* NOM */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="last_name">Nom</Label>
-                                <Input
-                                    id="last_name"
-                                    type="text"
-                                    required
-                                    tabIndex={3}
-                                    autoComplete="family-name"
-                                    name="last_name"
-                                    placeholder="Votre nom"
-                                />
-                                <InputError
-                                    message={errors.last_name}
-                                    className="mt-2"
-                                />
+                                {/* NOM */}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="last_name">Nom</Label>
+                                    <Input
+                                        id="last_name"
+                                        type="text"
+                                        tabIndex={3}
+                                        autoComplete="family-name"
+                                        name="last_name"
+                                        placeholder="Votre nom"
+                                    />
+                                    <InputError message={errors.last_name} className="mt-2" />
+                                </div>
                             </div>
 
                             {/* EMAIL */}
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Adresse email</Label>
+                                <Label htmlFor="email">Adresse email *</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -95,17 +87,36 @@ export default function Register() {
                                 <InputError message={errors.email} />
                             </div>
 
+                            {/* TÉLÉPHONE (OPTIONNEL) */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="phone">
+                                    Téléphone <span className="text-sm text-gray-500">(optionnel)</span>
+                                </Label>
+                                <Input
+                                    id="phone"
+                                    type="tel"
+                                    tabIndex={5}
+                                    autoComplete="tel"
+                                    name="phone"
+                                    placeholder="+33 6 12 34 56 78"
+                                />
+                                <p className="text-xs text-gray-500">
+                                    Utile pour les demandes de prêt
+                                </p>
+                                <InputError message={errors.phone} />
+                            </div>
+
                             {/* MOT DE PASSE */}
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Mot de passe</Label>
+                                <Label htmlFor="password">Mot de passe *</Label>
                                 <Input
                                     id="password"
                                     type="password"
                                     required
-                                    tabIndex={5}
+                                    tabIndex={6}
                                     autoComplete="new-password"
                                     name="password"
-                                    placeholder="Mot de passe"
+                                    placeholder="Minimum 8 caractères"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -113,26 +124,24 @@ export default function Register() {
                             {/* CONFIRMATION MOT DE PASSE */}
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Confirmer le mot de passe
+                                    Confirmer le mot de passe *
                                 </Label>
                                 <Input
                                     id="password_confirmation"
                                     type="password"
                                     required
-                                    tabIndex={6}
+                                    tabIndex={7}
                                     autoComplete="new-password"
                                     name="password_confirmation"
-                                    placeholder="Confirmer le mot de passe"
+                                    placeholder="Retapez votre mot de passe"
                                 />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
+                                <InputError message={errors.password_confirmation} />
                             </div>
 
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={7}
+                                tabIndex={8}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -142,7 +151,7 @@ export default function Register() {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Vous avez déjà un compte ?{' '}
-                            <TextLink href={login()} tabIndex={8}>
+                            <TextLink href={login()} tabIndex={9}>
                                 Se connecter
                             </TextLink>
                         </div>

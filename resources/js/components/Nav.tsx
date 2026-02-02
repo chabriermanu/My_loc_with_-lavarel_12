@@ -59,13 +59,13 @@ export default function Navbar() {
                     <div className="hidden md:flex md:items-center md:space-x-6">
                         <Link
                             href="/items"
-                            className="font-semibold text-white underline transition-colors hover:text-blue-600"
+                            className="font-bold  font-baloo text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
                         >
                             Items
                         </Link>
                         <Link
                             href="/categories"
-                            className="font-semibold text-white underline transition-colors hover:text-blue-600"
+                             className="font-bold  font-baloo2 text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
                         >
                             Catégories
                         </Link>
@@ -74,13 +74,13 @@ export default function Navbar() {
                             <>
                                 <Link
                                     href="/loans"
-                                    className="font-semibold text-white underline transition-colors hover:text-blue-600"
+                                     className="font-bold  font-baloo2 text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
                                 >
                                     Mes Prêts
                                 </Link>
                                 <Link
                                     href="/favorites"
-                                    className="font-semibold text-white underline transition-colors hover:text-blue-600"
+                                     className="font-semibold  font-baloo2 text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
                                 >
                                     Favoris
                                 </Link>

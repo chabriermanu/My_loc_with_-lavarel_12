@@ -1,5 +1,5 @@
 import type { User } from './auth';
-import type { PageProps } from './page'; // ← Importe depuis page.ts
+import type { PageProps } from './page';
 
 export interface Category {
     id: number;
@@ -10,6 +10,21 @@ export interface Category {
     points?: number;
     color?: string;
     items_count?: number;
+    items?: Item[];
+}
+
+// ✅ Renommé en ItemComment pour éviter les conflits
+export interface ItemComment {
+    id: number;
+    item_id: number;
+    user_id: number;
+    parent_id?: number;
+    content: string;
+    created_at: string;
+    user: User;
+    replies?: ItemComment[]; // ← Mise à jour ici
+    likes_count: number;
+    is_liked: boolean;
 }
 
 export interface Item {
@@ -37,7 +52,7 @@ export interface Item {
     comments_count: number;
     is_liked: boolean;
     is_favorited: boolean;
-    comments?: Comment[];
+    comments?: ItemComment[]; // ← Mise à jour ici
     reviews?: ItemReview[];
 }
 
@@ -62,19 +77,6 @@ export interface Loan {
     borrower: User;
 }
 
-export interface Comment {
-    id: number;
-    item_id: number;
-    user_id: number;
-    parent_id?: number;
-    content: string;
-    created_at: string;
-    user: User;
-    replies?: Comment[];
-    likes_count: number;
-    is_liked: boolean;
-}
-
 export interface LaravelPagination<T> {
     data: T[];
     current_page: number;
@@ -83,6 +85,11 @@ export interface LaravelPagination<T> {
     total: number;
     from: number;
     to: number;
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
 }
 
 export type PaginatedData<T> = {
@@ -141,4 +148,21 @@ export interface ItemReview {
     comment?: string;
     created_at: string;
     user: User;
+}
+
+// ✅ Props pour les composants
+export interface CommentSectionProps {
+    itemId: number;
+    itemOwnerId: number;
+    comments: ItemComment[]; // ← Mise à jour ici
+    currentUser: User | null;
+}
+
+export interface ItemCardProps {
+    item: Item;
+    showActions?: boolean;
+}
+
+export interface CategoryCardProps {
+    category: Category;
 }

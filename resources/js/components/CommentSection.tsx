@@ -1,23 +1,15 @@
-// components/CommentSection.tsx
-
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import type { User } from '@/types/auth';
-import type { Comment } from '@/types/model';
+import type { ItemComment, CommentSectionProps, User } from '@/types';
 import { router } from '@inertiajs/react';
 import { Heart, MessageCircle, Reply } from 'lucide-react';
 import { useState } from 'react';
 
 declare function route(name: string, params?: any): string;
 
-interface CommentSectionProps {
-    itemId: number;
-    comments: Comment[];
-    currentUser: User | null;
-}
-
 export default function CommentSection({
     itemId,
+    itemOwnerId,
     comments,
     currentUser,
 }: CommentSectionProps) {
@@ -27,24 +19,24 @@ export default function CommentSection({
 
     // ✅ States pour gérer les likes de chaque commentaire
    const [commentLikes, setCommentLikes] = useState<
-       Record<number, { isLiked: boolean; count: number }>
-   >(() => {
-       const initialLikes: Record<number, { isLiked: boolean; count: number }> =
-           {};
-       const allComments = [...comments];
-       comments.forEach((comment) => {
-           if (comment.replies) {
-               allComments.push(...comment.replies);
-           }
-       });
-       allComments.forEach((comment) => {
-           initialLikes[comment.id] = {
-               isLiked: comment.is_liked ?? false,
-               count: comment.likes_count ?? 0,
-           };
-       });
-       return initialLikes;
-   });
+    Record<number, { isLiked: boolean; count: number }>
+>(() => {
+    const initialLikes: Record<number, { isLiked: boolean; count: number }> =
+        {};
+    const allComments = [...comments];
+    comments.forEach((comment) => {
+        if (comment.replies) {
+            allComments.push(...comment.replies);
+        }
+    });
+    allComments.forEach((comment) => {
+        initialLikes[comment.id] = {
+            isLiked: comment.is_liked ?? false,
+            count: comment.likes_count ?? 0,
+        };
+    });
+    return initialLikes;
+});
 
     const handleSubmitComment = (e: React.FormEvent) => {
         e.preventDefault();
@@ -123,7 +115,7 @@ export default function CommentSection({
         );
     };
 
-    const renderComment = (comment: Comment) => {
+    const renderComment = (comment: ItemComment) => {
         const likeState = commentLikes[comment.id] || {
             isLiked: comment.is_liked ?? false,
             count: comment.likes_count ?? 0,
@@ -176,7 +168,7 @@ export default function CommentSection({
                                 </div>
                             )}
 
-                            {/* ✅ Si c'est son commentaire, afficher juste le compteur sans bouton */}
+                            {/* ✅ Si c'est son commentaire, afficher juste le compteur */}
                             {currentUser?.id === comment.user_id &&
                                 likeState.count > 0 && (
                                     <div className="flex items-center space-x-1">
@@ -187,6 +179,7 @@ export default function CommentSection({
                                     </div>
                                 )}
 
+                            {/* ✅ REPLY - Toujours disponible */}
                             {currentUser && (
                                 <Button
                                     variant="ghost"
@@ -196,6 +189,8 @@ export default function CommentSection({
                                     <Reply className="h-4 w-4" />
                                 </Button>
                             )}
+
+                            {/* DELETE - Seulement pour l'auteur */}
                             {currentUser?.id === comment.user_id && (
                                 <Button
                                     variant="ghost"
@@ -357,8 +352,8 @@ export default function CommentSection({
                 Commentaires ({comments.length})
             </h2>
 
-            {/* Formulaire nouveau commentaire */}
-            {currentUser ? (
+            {/* ✅ Formulaire nouveau commentaire - Seulement si ce n'est PAS son item */}
+            {currentUser && currentUser.id !== itemOwnerId ? (
                 <form onSubmit={handleSubmitComment} className="mb-6">
                     <Textarea
                         value={newComment}
@@ -369,6 +364,12 @@ export default function CommentSection({
                     />
                     <Button type="submit">Publier</Button>
                 </form>
+            ) : currentUser && currentUser.id === itemOwnerId ? (
+                <div className="mb-6 rounded-lg bg-blue-50 p-4">
+                    <p className="text-sm text-blue-800">
+                        💡 Vous ne pouvez pas commenter votre propre item, mais vous pouvez répondre aux commentaires des autres.
+                    </p>
+                </div>
             ) : (
                 <p className="mb-6 text-gray-500">
                     Connectez-vous pour laisser un commentaire
