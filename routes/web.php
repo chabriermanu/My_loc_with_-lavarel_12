@@ -86,13 +86,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Routes Categories
     Route::resource('categories', CategoryController::class)->except(['index', 'show']);
 
-    // Routes Loans
+    // ============================================================
+    // ROUTES LOANS (MISES À JOUR ✅)
+    // ============================================================
     Route::resource('loans', LoanController::class)->only(['index', 'store', 'show']);
+
+    // Actions sur les prêts
     Route::patch('loans/{loan}', [LoanController::class, 'update'])->name('loans.update');
     Route::patch('loans/{loan}/approve', [LoanController::class, 'approve'])->name('loans.approve');
     Route::patch('loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::patch('loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');
     Route::patch('loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('loans.cancel');
+
+    // ✅ NOUVELLES ROUTES : Partage de coordonnées
+    Route::post('loans/{loan}/request-contact', [LoanController::class, 'requestContact'])->name('loans.request-contact');
+    Route::post('loans/{loan}/share-contact', [LoanController::class, 'shareContact'])->name('loans.share-contact');
+    Route::get('loans/{loan}/contact-info', [LoanController::class, 'viewContactInfo'])->name('loans.contact-info');
+
+    // ✅ NOUVELLES ROUTES : Messagerie
+    Route::post('loans/{loan}/messages', [LoanController::class, 'sendMessage'])->name('loans.send-message');
+    Route::get('messages/unread-count', [LoanController::class, 'unreadMessagesCount'])->name('messages.unread-count');
 
     // Routes Likes
     Route::post('/like/toggle', [LikeController::class, 'toggle'])->name('like.toggle');

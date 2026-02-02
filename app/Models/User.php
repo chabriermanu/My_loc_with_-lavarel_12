@@ -102,4 +102,53 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class);
     }
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    public function consents()
+    {
+        return $this->hasMany(UserConsent::class);
+    }
+
+    // Vérifier si l'utilisateur a donné un consentement
+    public function hasConsent(string $type): bool
+    {
+        return $this->consents()
+            ->where('consent_type', $type)
+            ->where('accepted', true)
+            ->exists();
+    }
+
+    // Accesseurs pour la localisation publique
+    public function getPublicLocationAttribute(): string
+    {
+        if (!$this->city) {
+            return 'Non renseignée';
+        }
+
+        $department = substr($this->postal_code ?? '', 0, 2);
+        return $this->city . ($department ? " ({$department})" : '');
+    }
+
+    public function getFullAddressAttribute(): ?string
+    {
+        if (!$this->city || !$this->postal_code) {
+            return null;
+        }
+
+        $parts = array_filter([
+            $this->street_address ?? null,
+            $this->postal_code,
+            $this->city
+        ]);
+
+        return implode(', ', $parts);
+    }
 }

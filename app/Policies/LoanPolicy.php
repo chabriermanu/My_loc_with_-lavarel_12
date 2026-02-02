@@ -13,7 +13,8 @@ class LoanPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        // Tout utilisateur connecté peut voir ses propres prêts
+        return true;
     }
 
     /**
@@ -21,7 +22,8 @@ class LoanPolicy
      */
     public function view(User $user, Loan $loan): bool
     {
-        return false;
+        // L'utilisateur peut voir le prêt s'il est propriétaire OU emprunteur
+        return $loan->owner_id === $user->id || $loan->borrower_id === $user->id;
     }
 
     /**
@@ -29,7 +31,9 @@ class LoanPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        // Tout utilisateur connecté peut créer une demande de prêt
+        // La vérification "ne pas emprunter son propre item" est dans le controller
+        return true;
     }
 
     /**
@@ -37,6 +41,37 @@ class LoanPolicy
      */
     public function update(User $user, Loan $loan): bool
     {
+        // === EMPRUNTEUR ===
+        if ($user->id === $loan->borrower_id) {
+            // Peut modifier si pending ou approved
+            if (in_array($loan->status, ['pending', 'approved'])) {
+                return true;
+            }
+
+            // Peut modifier si in_progress mais pas encore commencé
+            if ($loan->status === 'in_progress') {
+                $start = $loan->start_date->format('Y-m-d') . ' ' . $loan->start_time;
+                return now()->lt($start);
+            }
+
+            return false;
+        }
+
+        // === PROPRIÉTAIRE ===
+        if ($user->id === $loan->owner_id) {
+            // Peut modifier si pending ou approved
+            if (in_array($loan->status, ['pending', 'approved'])) {
+                return true;
+            }
+
+            // Peut modifier si in_progress tant que pas retourné
+            if ($loan->status === 'in_progress' && $loan->returned_at === null) {
+                return true;
+            }
+
+            return false;
+        }
+
         return false;
     }
 
@@ -45,7 +80,88 @@ class LoanPolicy
      */
     public function delete(User $user, Loan $loan): bool
     {
-        return false;
+        // Seul le créateur (emprunteur) peut supprimer si statut pending
+        return $loan->borrower_id === $user->id && $loan->status === 'pending';
+    }
+
+    /**
+     * Annuler un prêt
+     */
+    public function cancel(User $user, Loan $loan): bool
+    {
+        // L'emprunteur OU le propriétaire peut annuler
+        if ($loan->borrower_id !== $user->id && $loan->owner_id !== $user->id) {
+            return false;
+        }
+
+        // On peut annuler seulement si pending ou approved
+        return in_array($loan->status, ['pending', 'approved']);
+    }
+
+    /**
+     * Approuver une demande de prêt
+     */
+    public function approve(User $user, Loan $loan): bool
+    {
+        // Seul le propriétaire peut approuver
+        return $loan->owner_id === $user->id && $loan->status === 'pending';
+    }
+
+    /**
+     * Refuser une demande de prêt
+     */
+    public function reject(User $user, Loan $loan): bool
+    {
+        // Seul le propriétaire peut refuser
+        return $loan->owner_id === $user->id && $loan->status === 'pending';
+    }
+
+    /**
+     * Marquer comme complété (retourné)
+     */
+    public function complete(User $user, Loan $loan): bool
+    {
+        // Seul le propriétaire peut marquer comme retourné
+        return $loan->owner_id === $user->id && $loan->status === 'in_progress';
+    }
+
+    /**
+     * Demander les coordonnées du propriétaire
+     */
+    public function requestContact(User $user, Loan $loan): bool
+    {
+        return $loan->borrower_id === $user->id
+            && in_array($loan->status, ['approved', 'in_progress'])
+            && !$loan->contact_requested;
+    }
+
+    /**
+     * Partager les coordonnées
+     */
+    public function shareContact(User $user, Loan $loan): bool
+    {
+        return $loan->owner_id === $user->id
+            && $loan->contact_requested
+            && !$loan->contact_shared;
+    }
+
+    /**
+     * Voir les coordonnées complètes
+     */
+    public function viewContactInfo(User $user, Loan $loan): bool
+    {
+        return $loan->borrower_id === $user->id
+            && in_array($loan->status, ['approved', 'in_progress', 'completed'])
+            && $loan->contact_shared;
+    }
+
+    /**
+     * Envoyer un message
+     */
+    public function sendMessage(User $user, Loan $loan): bool
+    {
+        // L'emprunteur OU le propriétaire peut envoyer des messages
+        return $loan->borrower_id === $user->id || $loan->owner_id === $user->id;
     }
 
     /**
@@ -53,6 +169,7 @@ class LoanPolicy
      */
     public function restore(User $user, Loan $loan): bool
     {
+        // Généralement réservé aux admins
         return false;
     }
 
@@ -61,6 +178,7 @@ class LoanPolicy
      */
     public function forceDelete(User $user, Loan $loan): bool
     {
+        // Généralement réservé aux admins
         return false;
     }
 }
