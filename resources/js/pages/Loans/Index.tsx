@@ -1,7 +1,7 @@
 import { LoanCard } from '@/components/Loans/LoanCard';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Loan } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { ClipboardList } from 'lucide-react';
 
 declare function route(name: string, params?: any): string;
@@ -17,6 +17,61 @@ interface Props {
 }
 
 export default function Index({ myLoansAsOwner, myLoansAsBorrower }: Props) {
+    // ✅ Fonction pour approuver un prêt
+    const handleApprove = (loanId: number) => {
+        if (!confirm('Voulez-vous vraiment approuver ce prêt ?')) return;
+
+        router.patch(
+            route('loans.approve', loanId),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Message de succès géré par le flash message
+                },
+                onError: () => {
+                    alert(
+                        "Une erreur est survenue lors de l'approbation du prêt.",
+                    );
+                },
+            },
+        );
+    };
+
+    // ✅ Fonction pour refuser un prêt
+    const handleReject = (loanId: number) => {
+        if (!confirm('Voulez-vous vraiment refuser ce prêt ?')) return;
+
+        router.patch(
+            route('loans.reject', loanId),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Message de succès géré par le flash message
+                },
+                onError: () => {
+                    alert('Une erreur est survenue lors du refus du prêt.');
+                },
+            },
+        );
+    };
+
+    const handleComplete = (loanId: number) => {
+        if (!confirm("Confirmez-vous que l'objet a été restitué ?")) return;
+
+        router.patch(
+            route('loans.complete', loanId),
+            {},
+            {
+                preserveScroll: true,
+                onError: () => {
+                    alert('Une erreur est survenue lors de la restitution.');
+                },
+            },
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Mes prêts" />
@@ -53,6 +108,9 @@ export default function Index({ myLoansAsOwner, myLoansAsBorrower }: Props) {
                                     key={loan.id}
                                     loan={loan}
                                     userRole="owner"
+                                    onApprove={handleApprove}
+                                    onReject={handleReject}
+                                    onComplete={handleComplete}
                                 />
                             ))}
                         </div>

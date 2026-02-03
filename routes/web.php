@@ -89,7 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     // ROUTES LOANS (MISES À JOUR ✅)
     // ============================================================
-    Route::resource('loans', LoanController::class)->only(['index', 'store', 'show']);
+    Route::resource('loans', LoanController::class)->only(['index', 'create', 'store', 'show']);
 
     // Actions sur les prêts
     Route::patch('loans/{loan}', [LoanController::class, 'update'])->name('loans.update');

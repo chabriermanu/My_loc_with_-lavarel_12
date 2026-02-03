@@ -20,13 +20,13 @@ class LoanController extends Controller
     public function index()
     {
         // Prêts où je suis propriétaire (j'ai prêté mes objets)
-        $myLoansAsOwner = Loan::with(['item', 'borrower'])
+        $myLoansAsOwner = Loan::with(['item.owner', 'borrower', 'messages'])
             ->where('owner_id', Auth::id())
             ->latest()
             ->paginate(10);
 
         // Prêts où je suis emprunteur (j'ai emprunté)
-        $myLoansAsBorrower = Loan::with(['item', 'owner'])
+        $myLoansAsBorrower = Loan::with(['item.owner', 'owner', 'messages'])
             ->where('borrower_id', Auth::id())
             ->latest()
             ->paginate(10);
@@ -36,7 +36,32 @@ class LoanController extends Controller
             'myLoansAsBorrower' => $myLoansAsBorrower,
         ]);
     }
+    public function create(Request $request)
+    {
+        $itemId = $request->query('item');
 
+        if (!$itemId) {
+            return redirect()->route('items.index')
+                ->with('error', 'Aucun item spécifié');
+        }
+
+        // ✅ Charger les relations nécessaires
+        $item = Item::with(['owner', 'category'])->findOrFail($itemId);
+
+        if ($item->user_id === Auth::id()) {
+            return redirect()->route('items.show', $item)
+                ->with('error', 'Vous ne pouvez pas emprunter votre propre item');
+        }
+
+        if (!$item->is_available) {
+            return redirect()->route('items.show', $item)
+                ->with('error', 'Cet item n\'est pas disponible');
+        }
+
+        return Inertia::render('Loans/Create', [
+            'item' => $item,
+        ]);
+    }
     /**
      * Store a newly created resource in storage.
      */
@@ -144,19 +169,19 @@ class LoanController extends Controller
 
     public function approve(Loan $loan)
     {
-        Gate::authorize('approve', $loan); // ✅ Utilisation de la policy
+        Gate::authorize('approve', $loan);
 
         if ($loan->status !== 'pending') {
             return back()->with('error', 'Ce prêt ne peut pas être approuvé');
         }
 
-        $loan->update(['status' => 'approved']);
+        // ✅ CHANGER ICI : passer directement à 'in_progress' au lieu de 'approved'
+        $loan->update(['status' => 'in_progress']);
 
         // TODO: Envoyer notification à l'emprunteur
 
         return back()->with('success', 'Prêt approuvé !');
     }
-
     public function reject(Loan $loan)
     {
         Gate::authorize('reject', $loan); // ✅ Utilisation de la policy

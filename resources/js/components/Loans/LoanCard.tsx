@@ -24,6 +24,7 @@ interface LoanCardProps {
     userRole: 'owner' | 'borrower';
     onApprove?: (loanId: number) => void;
     onReject?: (loanId: number) => void;
+    onComplete?: (loanId: number) => void;
 }
 
 export function LoanCard({
@@ -31,6 +32,7 @@ export function LoanCard({
     userRole,
     onApprove,
     onReject,
+    onComplete,
 }: LoanCardProps) {
     const getStatusIcon = () => {
         switch (loan.status) {
@@ -55,22 +57,16 @@ export function LoanCard({
         switch (loan.status) {
             case 'pending':
                 return 'En attente';
-
             case 'approved':
                 return 'Approuvé';
-
             case 'in_progress':
                 return 'En cours';
-
             case 'completed':
                 return 'Terminé';
-
             case 'cancelled':
                 return 'Annulé';
-
             case 'overdue':
                 return 'En retard';
-
             default:
                 return loan.status;
         }
@@ -91,7 +87,7 @@ export function LoanCard({
                     <div className="flex items-center gap-2">
                         <Package className="h-5 w-5 text-primary" />
                         <h3 className="text-lg font-semibold">
-                            {loan.item.name}
+                            {loan.item?.name ?? 'Article'}
                         </h3>
                     </div>
                     <div className="flex items-center gap-2">
@@ -104,17 +100,15 @@ export function LoanCard({
             </CardHeader>
 
             <CardContent className="space-y-3">
-                {/* Information sur l'utilisateur */}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <User className="h-4 w-4" />
                     <span>
                         {userRole === 'owner'
-                            ? `Emprunteur: ${loan.borrower.name}`
-                            : `Propriétaire: ${loan.item.owner.name}`}
+                            ? `Emprunteur: ${loan.borrower?.name ?? 'Inconnu'}`
+                            : `Propriétaire: ${loan.item?.owner?.name ?? 'Inconnu'}`}
                     </span>
                 </div>
 
-                {/* Dates */}
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -125,8 +119,7 @@ export function LoanCard({
                     </div>
                 </div>
 
-                {/* Message si présent */}
-                {loan.messages.length > 0 && (
+                {loan.messages && loan.messages.length > 0 && (
                     <div className="flex items-start gap-2 rounded-md bg-muted p-3 text-sm">
                         <MessageCircle className="mt-0.5 h-4 w-4 text-muted-foreground" />
                         <p className="text-muted-foreground">
@@ -137,7 +130,6 @@ export function LoanCard({
             </CardContent>
 
             <CardFooter className="flex gap-2 pt-3">
-                {/* Actions pour le propriétaire */}
                 {userRole === 'owner' && loan.status === 'pending' && (
                     <>
                         <Button
@@ -161,17 +153,19 @@ export function LoanCard({
                     </>
                 )}
 
-                {/* Bouton pour voir les détails */}
-                <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className={
-                        userRole === 'owner' && loan.status === 'pending'
-                            ? 'w-full'
-                            : 'flex-1'
-                    }
-                >
+                {userRole === 'owner' && loan.status === 'in_progress' && (
+                    <Button
+                        onClick={() => onComplete?.(loan.id)}
+                        variant="default"
+                        size="sm"
+                        className="flex-1"
+                    >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Marquer comme restitué
+                    </Button>
+                )}
+
+                <Button asChild variant="outline" size="sm" className="flex-1">
                     <Link href={`/loans/${loan.id}`}>Voir détails</Link>
                 </Button>
             </CardFooter>
