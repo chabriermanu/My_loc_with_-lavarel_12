@@ -1,0 +1,150 @@
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Loan } from '@/types/model';
+import { Link, router } from '@inertiajs/react';
+import {
+    Calendar,
+    Clock,
+    MessageCircle,
+    Package,
+    User,
+    CheckCircle,
+    XCircle,
+    AlertCircle,
+    Ban
+} from 'lucide-react';
+
+interface LoanCardProps {
+    loan: Loan;
+    userRole: 'owner' | 'borrower';
+    onApprove?: (loanId: number) => void;
+    onReject?: (loanId: number) => void;
+}
+
+export function LoanCard({ loan, userRole, onApprove, onReject }: LoanCardProps) {
+    const getStatusIcon = () => {
+        switch (loan.status) {
+            case 'pending':
+                return <Clock className="h-5 w-5 text-yellow-500" />;
+            case 'approved':
+                return <CheckCircle className="h-5 w-5 text-green-500" />;
+            case 'rejected':
+                return <XCircle className="h-5 w-5 text-red-500" />;
+            case 'returned':
+                return <CheckCircle className="h-5 w-5 text-blue-500" />;
+            case 'cancelled':
+                return <Ban className="h-5 w-5 text-gray-500" />;
+            default:
+                return <AlertCircle className="h-5 w-5 text-gray-500" />;
+        }
+    };
+
+    const getStatusText = () => {
+        switch (loan.status) {
+            case 'pending':
+                return 'En attente';
+            case 'approved':
+                return 'Approuvé';
+            case 'rejected':
+                return 'Rejeté';
+            case 'returned':
+                return 'Retourné';
+            case 'cancelled':
+                return 'Annulé';
+            default:
+                return loan.status;
+        }
+    };
+
+    const formatDate = (date: string) => {
+        return new Date(date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
+    return (
+        <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold text-lg">{loan.item.name}</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {getStatusIcon()}
+                        <span className="text-sm font-medium">{getStatusText()}</span>
+                    </div>
+                </div>
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+                {/* Information sur l'utilisateur */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="h-4 w-4" />
+                    <span>
+                        {userRole === 'owner' 
+                            ? `Emprunteur: ${loan.borrower.name}`
+                            : `Propriétaire: ${loan.item.owner.name}`
+                        }
+                    </span>
+                </div>
+
+                {/* Dates */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>Du {formatDate(loan.start_date)} au {formatDate(loan.end_date)}</span>
+                    </div>
+                </div>
+
+                {/* Message si présent */}
+                {loan.message && (
+                    <div className="flex items-start gap-2 text-sm bg-muted p-3 rounded-md">
+                        <MessageCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <p className="text-muted-foreground">{loan.message}</p>
+                    </div>
+                )}
+            </CardContent>
+
+            <CardFooter className="flex gap-2 pt-3">
+                {/* Actions pour le propriétaire */}
+                {userRole === 'owner' && loan.status === 'pending' && (
+                    <>
+                        <Button
+                            onClick={() => onApprove?.(loan.id)}
+                            variant="default"
+                            size="sm"
+                            className="flex-1"
+                        >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approuver
+                        </Button>
+                        <Button
+                            onClick={() => onReject?.(loan.id)}
+                            variant="destructive"
+                            size="sm"
+                            className="flex-1"
+                        >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Refuser
+                        </Button>
+                    </>
+                )}
+
+                {/* Bouton pour voir les détails */}
+                <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className={userRole === 'owner' && loan.status === 'pending' ? 'w-full' : 'flex-1'}
+                >
+                    <Link href={`/loans/${loan.id}`}>
+                        Voir détails
+                    </Link>
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}

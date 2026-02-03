@@ -62,19 +62,47 @@ export interface Loan {
     owner_id: number;
     borrower_id: number;
     start_date: string;
+    start_time: string; 
     end_date: string;
-    status:
-        | 'pending'
-        | 'approved'
-        | 'in_progress'
-        | 'completed'
-        | 'cancelled'
-        | 'overdue';
+    end_time: string; 
+    status: 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'overdue';
     returned_at?: string;
     notes?: string;
-    item: Item;
-    owner: User;
-    borrower: User;
+    contact_requested: boolean;
+    contact_requested_at?: string;
+    contact_shared: boolean;
+    contact_shared_at?: string;
+    share_email: boolean;
+    share_phone: boolean;
+    share_address: boolean;
+    created_at: string;
+    updated_at: string;
+    // Relations
+    item?: Item;
+    owner?: User;
+    borrower?: User;
+    messages?: Message[];
+}
+
+export interface Message {
+    id: number;
+    loan_id: number;
+    sender_id: number;
+    receiver_id: number;
+    content: string;
+    read_at?: string;
+    created_at: string;
+    updated_at: string;
+    // Relations
+    sender?: User;
+    receiver?: User;
+    loan?: Loan;
+}
+
+export interface ContactInfo {
+    email?: string;
+    phone?: string;
+    address?: string;
 }
 
 export interface LaravelPagination<T> {
