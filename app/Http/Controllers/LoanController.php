@@ -119,6 +119,7 @@ class LoanController extends Controller
 
         return Inertia::render('Loans/Show', [
             'loan' => $loan,
+            'userRole' => $loan->owner_id === Auth::id() ? 'owner' : 'borrower',
             'canRequestContact' => Gate::allows('requestContact', $loan),
             'canShareContact' => Gate::allows('shareContact', $loan),
             'canViewContactInfo' => Gate::allows('viewContactInfo', $loan),

@@ -78,10 +78,10 @@ export interface Loan {
     created_at: string;
     updated_at: string;
     // Relations
-    item?: Item;
-    owner?: User;
-    borrower?: User;
-    messages?: Message[];
+    item: Item;
+    owner: User;
+    borrower: User;
+    messages: Message[];
 }
 
 export interface Message {
