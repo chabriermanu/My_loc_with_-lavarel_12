@@ -7,6 +7,11 @@ use App\Models\Message;
 use App\Http\Requests\StoreLoanRequest;
 use App\Http\Requests\UpdateLoanRequest;
 use App\Models\Item;
+use App\Notifications\LoanApproved;
+use App\Notifications\LoanRejected;
+use App\Notifications\ContactRequested;
+use App\Notifications\ContactShared;
+use App\Notifications\NewMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -36,6 +41,7 @@ class LoanController extends Controller
             'myLoansAsBorrower' => $myLoansAsBorrower,
         ]);
     }
+
     public function create(Request $request)
     {
         $itemId = $request->query('item');
@@ -62,6 +68,7 @@ class LoanController extends Controller
             'item' => $item,
         ]);
     }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -92,7 +99,7 @@ class LoanController extends Controller
 
     public function update(UpdateLoanRequest $request, Loan $loan)
     {
-        Gate::authorize('update', $loan); // ✅ Utilisation de la policy
+        Gate::authorize('update', $loan);
 
         // Vérifier que le prêt peut être modifié selon son statut
         if (!in_array($loan->status, ['pending', 'approved', 'in_progress'])) {
@@ -132,7 +139,7 @@ class LoanController extends Controller
      */
     public function show(Loan $loan)
     {
-        Gate::authorize('view', $loan); // ✅ Utilisation de la policy
+        Gate::authorize('view', $loan);
 
         $loan->load(['item', 'owner', 'borrower', 'messages.sender', 'messages.receiver']);
 
@@ -156,7 +163,7 @@ class LoanController extends Controller
 
     public function cancel(Loan $loan)
     {
-        Gate::authorize('cancel', $loan); // ✅ Utilisation de la policy
+        Gate::authorize('cancel', $loan);
 
         if (!in_array($loan->status, ['pending', 'approved'])) {
             return back()->with('error', 'Ce prêt ne peut plus être annulé (déjà en cours ou terminé)');
@@ -175,16 +182,17 @@ class LoanController extends Controller
             return back()->with('error', 'Ce prêt ne peut pas être approuvé');
         }
 
-        // ✅ CHANGER ICI : passer directement à 'in_progress' au lieu de 'approved'
         $loan->update(['status' => 'in_progress']);
 
-        // TODO: Envoyer notification à l'emprunteur
+        // ✅ Notification à l'emprunteur
+        $loan->borrower->notify(new LoanApproved($loan));
 
         return back()->with('success', 'Prêt approuvé !');
     }
+
     public function reject(Loan $loan)
     {
-        Gate::authorize('reject', $loan); // ✅ Utilisation de la policy
+        Gate::authorize('reject', $loan);
 
         if ($loan->status !== 'pending') {
             return back()->with('error', 'Seules les demandes en attente peuvent être refusées');
@@ -192,14 +200,15 @@ class LoanController extends Controller
 
         $loan->update(['status' => 'cancelled']);
 
-        // TODO: Envoyer notification à l'emprunteur
+        // ✅ Notification à l'emprunteur
+        $loan->borrower->notify(new LoanRejected($loan));
 
         return back()->with('success', 'Prêt refusé avec succès !');
     }
 
     public function complete(Loan $loan)
     {
-        Gate::authorize('complete', $loan); // ✅ Utilisation de la policy
+        Gate::authorize('complete', $loan);
 
         if ($loan->status !== 'in_progress') {
             return back()->with('error', 'Seuls les prêts en cours peuvent être marqués comme retournés');
@@ -222,7 +231,8 @@ class LoanController extends Controller
         try {
             $loan->requestContact();
 
-            // TODO: Envoyer notification au propriétaire
+            // ✅ Notification au propriétaire
+            $loan->owner->notify(new ContactRequested($loan));
 
             return back()->with('success', 'Demande de coordonnées envoyée au propriétaire !');
         } catch (\Exception $e) {
@@ -255,7 +265,8 @@ class LoanController extends Controller
                 'address' => $validated['share_address'],
             ]);
 
-            // TODO: Envoyer notification à l'emprunteur
+            // ✅ Notification à l'emprunteur
+            $loan->borrower->notify(new ContactShared($loan));
 
             return back()->with('success', 'Coordonnées partagées avec succès !');
         } catch (\Exception $e) {
@@ -302,7 +313,9 @@ class LoanController extends Controller
             'content' => $validated['content'],
         ]);
 
-        // TODO: Envoyer notification temps réel (Pusher/Echo)
+        // ✅ Notification au destinataire
+        $receiver = \App\Models\User::find($receiverId);
+        $receiver->notify(new NewMessage($message));
 
         return back()->with('success', 'Message envoyé !');
     }

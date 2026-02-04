@@ -4,6 +4,11 @@ import { createRoot } from 'react-dom/client';
 import { route as ziggyRoute } from 'ziggy-js';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
+import { configureEcho } from '@laravel/echo-react';
+
+configureEcho({
+    broadcaster: 'pusher',
+});
 // Type pour window
 declare global {
     interface Window {
