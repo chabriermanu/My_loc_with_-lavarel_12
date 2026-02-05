@@ -11,11 +11,11 @@ declare function route(name: string, params?: any): string;
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
-        href: route('dashboard'),
+        href: 'dashboard', // nom de route, pas route()
     },
     {
-        title: 'Articles',
-        href: route('items.index'),
+        title: 'Mes emprunts',
+        href: 'loans.borrows', // nom de route
     },
 ];
 
@@ -45,14 +45,16 @@ export default function Index({ items }: Props) {
                 {/* Header avec bouton créer */}
                 <div className="flex items-center justify-between text-center">
                     <div>
-                        <h1 className="text-center text-3xl font-semibold underline"
+                        <h1
+                            className="text-center text-3xl font-semibold underline"
                             style={{
                                 color: 'white',
                                 WebkitTextStroke: '1.5px #2563eb',
                                 paintOrder: 'stroke fill',
                                 textShadow:
                                     '0 4px 16px rgba(0,0,0,0.8), 0 8px 32px rgba(0,0,0,0.6)',
-                            }} >
+                            }}
+                        >
                             Tous les articles
                         </h1>
                         <p className="mt-2 text-white/80">

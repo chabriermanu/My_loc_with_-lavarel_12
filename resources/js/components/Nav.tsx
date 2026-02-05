@@ -59,13 +59,15 @@ export default function Navbar() {
                     <div className="hidden md:flex md:items-center md:space-x-6">
                         <Link
                             href="/items"
-                            className="font-bold  font-baloo text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
+                            className="font-baloo text-2xl font-bold text-white underline transition-colors hover:text-blue-600"
+                            style={{ WebkitTextStroke: '0.5px #2563eb' }}
                         >
                             Items
                         </Link>
                         <Link
                             href="/categories"
-                             className="font-bold  font-baloo2 text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
+                            className="font-baloo2 text-2xl font-bold text-white underline transition-colors hover:text-blue-600"
+                            style={{ WebkitTextStroke: '0.5px #2563eb' }}
                         >
                             Catégories
                         </Link>
@@ -73,14 +75,29 @@ export default function Navbar() {
                         {auth.user && (
                             <>
                                 <Link
-                                    href="/loans"
-                                     className="font-bold  font-baloo2 text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
+                                    href={route('loans.lends')}
+                                    className="font-baloo2 text-2xl font-bold text-white underline transition-colors hover:text-blue-600"
+                                    style={{
+                                        WebkitTextStroke: '0.5px #2563eb',
+                                    }}
                                 >
                                     Mes Prêts
                                 </Link>
                                 <Link
+                                    href={route('loans.borrows')}
+                                    className="font-baloo2 text-2xl font-bold text-white underline transition-colors hover:text-blue-600"
+                                    style={{
+                                        WebkitTextStroke: '0.5px #2563eb',
+                                    }}
+                                >
+                                    Mes Emprunts
+                                </Link>
+                                <Link
                                     href="/favorites"
-                                     className="font-semibold  font-baloo2 text-white underline text-2xl transition-colors hover:text-blue-600" style={{ WebkitTextStroke: '0.5px #2563eb'}}
+                                    className="font-baloo2 text-2xl font-semibold text-white underline transition-colors hover:text-blue-600"
+                                    style={{
+                                        WebkitTextStroke: '0.5px #2563eb',
+                                    }}
                                 >
                                     Favoris
                                 </Link>
@@ -102,13 +119,6 @@ export default function Navbar() {
                     <div className="hidden md:flex md:items-center md:space-x-4">
                         {auth.user ? (
                             <>
-                                <Link
-                                    href={route('items.create')}
-                                    className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                                >
-                                    Ajouter un item
-                                </Link>
-
                                 {/* Menu utilisateur avec dropdown */}
                                 <div
                                     className="relative z-50"

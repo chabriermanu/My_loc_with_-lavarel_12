@@ -13,15 +13,16 @@ use App\Notifications\ContactRequested;
 use App\Notifications\ContactShared;
 use App\Notifications\NewMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class LoanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    //-----------------------------------------
+    // 1) ROUTES REST PRINCIPALES
+    //--------------------------------------------
     public function index()
     {
         // Prêts où je suis propriétaire (j'ai prêté mes objets)
@@ -69,9 +70,6 @@ class LoanController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreLoanRequest $request)
     {
         $item = Item::findOrFail($request->item_id);
@@ -95,6 +93,58 @@ class LoanController extends Controller
 
         return redirect()->route('loans.index')
             ->with('success', 'Demande prêt envoyée !');
+    }
+
+    public function show(Loan $loan)
+    {
+        Gate::authorize('view', $loan);
+
+        // Charger les relations
+        $loan->load([
+            'item',
+            'owner',
+            'borrower',
+            'messages.sender',
+            'messages.receiver'
+        ]);
+
+        // 🔥 Recharge les colonnes du modèle AVEC les nouveaux casts
+        // (sinon end_time et end_date gardent les anciennes valeurs datetime)
+        $loan->refresh();
+
+        // Marquer les messages non lus comme lus
+        $loan->messages
+            ->where('receiver_id', Auth::id())
+            ->whereNull('read_at')
+            ->each->markAsRead();
+
+        \Log::info('DEBUG SHOW', [
+            'end_date' => $loan->end_date,
+            'end_time' => $loan->end_time,
+            'showContact' => $this->shouldShowBorrowerContact($loan),
+        ]);
+
+
+
+        return Inertia::render('Loans/Show', [
+            'loan' => $loan,
+            'userRole' => $loan->owner_id === Auth::id() ? 'owner' : 'borrower',
+
+            'canRequestContact' => Gate::allows('requestContact', $loan),
+            'canShareContact' => Gate::allows('shareContact', $loan),
+            'canViewContactInfo' => Gate::allows('viewContactInfo', $loan),
+
+            'contactInfo' => $this->shouldShowContactInfo($loan)
+                ? $loan->getSharedContactInfo()
+                : null,
+
+            // 👉 Affichage automatique si retard
+            'showContact' => $this->shouldShowBorrowerContact($loan),
+
+            'borrowerContactInfo' => $this->shouldShowBorrowerContact($loan)
+                ? $this->getBorrowerContactInfo($loan)
+                : null,
+        ]);
     }
 
     public function update(UpdateLoanRequest $request, Loan $loan)
@@ -134,32 +184,40 @@ class LoanController extends Controller
         return back()->with('success', 'Le prêt a été mis à jour avec succès.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Loan $loan)
+    // -------------------------
+    // 2) PAGES PERSONNALISÉES
+    // -------------------------
+
+    // Mes emprunts (ce que j'emprunte)
+    public function borrows()
     {
-        Gate::authorize('view', $loan);
+        $borrows = Auth::user()->borrowedLoans()
+            ->with(['item.owner', 'item.category'])
+            ->latest()
+            ->paginate(9);
 
-        $loan->load(['item', 'owner', 'borrower', 'messages.sender', 'messages.receiver']);
-
-        // Marquer les messages non lus comme lus
-        $loan->messages
-            ->where('receiver_id', Auth::id())
-            ->whereNull('read_at')
-            ->each->markAsRead();
-
-        return Inertia::render('Loans/Show', [
-            'loan' => $loan,
-            'userRole' => $loan->owner_id === Auth::id() ? 'owner' : 'borrower',
-            'canRequestContact' => Gate::allows('requestContact', $loan),
-            'canShareContact' => Gate::allows('shareContact', $loan),
-            'canViewContactInfo' => Gate::allows('viewContactInfo', $loan),
-            'contactInfo' => Gate::allows('viewContactInfo', $loan)
-                ? $loan->getSharedContactInfo()
-                : null,
+        return Inertia::render('Loans/Borrows', [
+            'borrows' => $borrows
         ]);
     }
+
+    // Mes prêts (ce que je prête)
+    public function lends()
+    {
+        $lends = Auth::user()->ownedLoans()
+            ->with(['item', 'borrower'])
+            ->latest()
+            ->paginate(9);
+
+
+        return Inertia::render('Loans/Lends', [
+            'lends' => $lends
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // 3) ACTIONS SUR LES PRÊTS (OWNER / BORROWER)
+    // ---------------------------------------------------------
 
     public function cancel(Loan $loan)
     {
@@ -219,11 +277,10 @@ class LoanController extends Controller
         return back()->with('success', 'Prêt restitué avec succès !');
     }
 
-    // ========== NOUVELLES MÉTHODES : PARTAGE DE COORDONNÉES ==========
+    // ---------------------------------------------------------
+    // 4) PARTAGE DE COORDONNÉES
+    // ---------------------------------------------------------
 
-    /**
-     * Demander les coordonnées du propriétaire (emprunteur)
-     */
     public function requestContact(Loan $loan)
     {
         Gate::authorize('requestContact', $loan);
@@ -240,9 +297,6 @@ class LoanController extends Controller
         }
     }
 
-    /**
-     * Partager ses coordonnées (propriétaire)
-     */
     public function shareContact(Request $request, Loan $loan)
     {
         Gate::authorize('shareContact', $loan);
@@ -286,11 +340,10 @@ class LoanController extends Controller
         ]);
     }
 
-    // ========== NOUVELLES MÉTHODES : MESSAGERIE ==========
+    // ---------------------------------------------------------
+    // 5) MESSAGERIE
+    // ---------------------------------------------------------
 
-    /**
-     * Envoyer un message
-     */
     public function sendMessage(Request $request, Loan $loan)
     {
         Gate::authorize('sendMessage', $loan);
@@ -320,9 +373,6 @@ class LoanController extends Controller
         return back()->with('success', 'Message envoyé !');
     }
 
-    /**
-     * Nombre de messages non lus pour l'utilisateur
-     */
     public function unreadMessagesCount()
     {
         $count = Message::where('receiver_id', Auth::id())
@@ -330,5 +380,78 @@ class LoanController extends Controller
             ->count();
 
         return response()->json(['unread_count' => $count]);
+    }
+
+    // ---------------------------------------------------------
+    // 6) MÉTHODES PRIVÉES UTILITAIRES
+    // ---------------------------------------------------------
+
+    private function shouldShowContactInfo(Loan $loan): bool
+    {
+        // Si le prêt est cancelled ou completed, masquer
+        if (in_array($loan->status, ['completed', 'cancelled'])) {
+            return false;
+        }
+
+        // Vérifier les permissions normales
+        return Gate::allows('viewContactInfo', $loan);
+    }
+
+    /**
+     * Détermine si les coordonnées de l'emprunteur doivent être affichées au propriétaire
+     * - AUTOMATIQUEMENT visible si retard de plus de 4h
+     * - Seulement pour le propriétaire
+     */
+    private function shouldShowBorrowerContact(Loan $loan): bool
+    {
+        if ($loan->owner_id !== Auth::id()) {
+            return false;
+        }
+
+        if ($loan->status !== 'in_progress') {
+            return false;
+        }
+
+        // Récupérer les valeurs BRUTES depuis la base de données (sans casts)
+        $endDate = $loan->getRawOriginal('end_date');
+        $endTime = $loan->getRawOriginal('end_time');
+
+        // Construire la datetime de fin
+        if ($endTime) {
+            // Si on a une heure, combiner date + heure
+            $endDateTime = Carbon::parse($endDate . ' ' . $endTime);
+        } else {
+            // Sinon, prendre la fin de la journée
+            $endDateTime = Carbon::parse($endDate)->endOfDay();
+        }
+
+        // Ajouter 4h de délai de grâce
+        $gracePeriodEnd = $endDateTime->copy()->addMinutes(30);
+
+        \Log::info('DEBUG RETARD', [
+            'loan_id' => $loan->id,
+            'end_date_raw' => $endDate,
+            'end_time_raw' => $endTime,
+            'end_datetime' => $endDateTime->toDateTimeString(),
+            'grace_period_end' => $gracePeriodEnd->toDateTimeString(),
+            'now' => now()->toDateTimeString(),
+            'is_late' => now()->greaterThan($gracePeriodEnd),
+        ]);
+
+        return now()->greaterThan($gracePeriodEnd);
+    }
+
+    /**
+     * Récupère les coordonnées de l'emprunteur
+     */
+    private function getBorrowerContactInfo(Loan $loan): array
+    {
+        $borrower = $loan->borrower;
+
+        return [
+            'email' => $borrower->email,
+            'phone' => $borrower->phone ?? null,
+            'address' => $borrower->full_address ?? null,
+        ];
     }
 }

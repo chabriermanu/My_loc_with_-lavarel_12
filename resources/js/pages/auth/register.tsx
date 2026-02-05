@@ -38,7 +38,10 @@ export default function Register() {
                                     name="name"
                                     placeholder="Choisissez un pseudo unique"
                                 />
-                                <InputError message={errors.name} className="mt-2" />
+                                <InputError
+                                    message={errors.name}
+                                    className="mt-2"
+                                />
                             </div>
 
                             {/* PRÉNOM ET NOM SUR LA MÊME LIGNE */}
@@ -54,7 +57,10 @@ export default function Register() {
                                         name="first_name"
                                         placeholder="Votre prénom"
                                     />
-                                    <InputError message={errors.first_name} className="mt-2" />
+                                    <InputError
+                                        message={errors.first_name}
+                                        className="mt-2"
+                                    />
                                 </div>
 
                                 {/* NOM */}
@@ -68,7 +74,10 @@ export default function Register() {
                                         name="last_name"
                                         placeholder="Votre nom"
                                     />
-                                    <InputError message={errors.last_name} className="mt-2" />
+                                    <InputError
+                                        message={errors.last_name}
+                                        className="mt-2"
+                                    />
                                 </div>
                             </div>
 
@@ -90,7 +99,10 @@ export default function Register() {
                             {/* TÉLÉPHONE (OPTIONNEL) */}
                             <div className="grid gap-2">
                                 <Label htmlFor="phone">
-                                    Téléphone <span className="text-sm text-gray-500">(optionnel)</span>
+                                    Téléphone{' '}
+                                    <span className="text-sm text-gray-500">
+                                        (optionnel)
+                                    </span>
                                 </Label>
                                 <Input
                                     id="phone"
@@ -105,7 +117,72 @@ export default function Register() {
                                 </p>
                                 <InputError message={errors.phone} />
                             </div>
+                            {/* SECTION LOCALISATION */}
+                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                <h3 className="mb-3 text-sm font-semibold text-gray-700">
+                                    📍 Localisation (optionnel mais recommandé)
+                                </h3>
+                                <p className="mb-4 text-xs text-gray-500">
+                                    Permet aux utilisateurs de trouver des
+                                    objets près de chez eux. Seule votre ville
+                                    sera visible publiquement.
+                                </p>
 
+                                {/* CODE POSTAL ET VILLE */}
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="postal_code">
+                                            Code postal
+                                        </Label>
+                                        <Input
+                                            id="postal_code"
+                                            type="text"
+                                            tabIndex={6}
+                                            autoComplete="postal-code"
+                                            name="postal_code"
+                                            placeholder="75001"
+                                            maxLength={5}
+                                        />
+                                        <InputError
+                                            message={errors.postal_code}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="city">Ville</Label>
+                                        <Input
+                                            id="city"
+                                            type="text"
+                                            tabIndex={7}
+                                            autoComplete="address-level2"
+                                            name="city"
+                                            placeholder="Paris"
+                                        />
+                                        <InputError message={errors.city} />
+                                    </div>
+                                </div>
+
+                                {/* ADRESSE COMPLÈTE (OPTIONNELLE) */}
+                                <div className="mt-4 grid gap-2">
+                                    <Label htmlFor="street_address">
+                                        Adresse complète{' '}
+                                        <span className="text-sm text-gray-500">
+                                            (privée - pour les échanges)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="street_address"
+                                        type="text"
+                                        tabIndex={8}
+                                        autoComplete="street-address"
+                                        name="street_address"
+                                        placeholder="12 rue de la Paix"
+                                    />
+                                    <InputError
+                                        message={errors.street_address}
+                                    />
+                                </div>
+                            </div>
                             {/* MOT DE PASSE */}
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Mot de passe *</Label>
@@ -135,7 +212,9 @@ export default function Register() {
                                     name="password_confirmation"
                                     placeholder="Retapez votre mot de passe"
                                 />
-                                <InputError message={errors.password_confirmation} />
+                                <InputError
+                                    message={errors.password_confirmation}
+                                />
                             </div>
 
                             <Button

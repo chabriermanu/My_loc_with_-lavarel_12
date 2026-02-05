@@ -32,6 +32,11 @@ class CreateNewUser implements CreatesNewUsers
             'first_name' => $input['first_name'] ?? '',
             'last_name' => $input['last_name'] ?? '',
             'phone' => $input['phone'] ?? null,
+
+            // ✅ NOUVEAUX CHAMPS DE LOCALISATION
+            'postal_code' => $input['postal_code'] ?? null,
+            'city' => $input['city'] ?? null,
+            'street_address' => $input['street_address'] ?? null,
         ]);
     }
 }

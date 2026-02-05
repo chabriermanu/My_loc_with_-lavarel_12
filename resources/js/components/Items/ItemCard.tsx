@@ -1,3 +1,5 @@
+import type { Media } from '@/components/ItemMediaCarousel';
+import ItemMediaCarousel from '@/components/ItemMediaCarousel';
 import type { ItemCardProps } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Edit, Eye, Heart, MessageCircle, Star, Trash } from 'lucide-react';
@@ -9,6 +11,22 @@ declare function route(name: string, params?: any): string;
 
 export default function ItemCard({ item, showActions = false }: ItemCardProps) {
     const { auth } = usePage().props as any;
+    const medias: Media[] = [];
+
+    if (item.picture) {
+        medias.push({
+            type: 'image',
+            src: `/storage/${item.picture}`,
+        });
+    }
+
+    if (item.video) {
+        medias.push({
+            type: 'video',
+            src: `/storage/${item.video}`,
+        });
+    }
+
     const [deletingId, setDeletingId] = useState<number | null>(null);
 
     // ✅ States locaux avec valeurs par défaut
@@ -76,27 +94,8 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
 
     return (
         <Card className="overflow-hidden">
-            {/* IMAGE */}
-            {item.picture && (
-                <div className="aspect-w-16 aspect-h-9">
-                    <img
-                        src={`/storage/${item.picture}`}
-                        className="h-full w-full rounded-md object-cover"
-                        alt={item.name}
-                    />
-                </div>
-            )}
-
-            {/* VIDEO */}
-            {item.video && (
-                <div className="aspect-w-16 aspect-h-9">
-                    <video
-                        src={`/storage/${item.video}`}
-                        controls
-                        className="h-full w-full rounded-md object-cover"
-                    />
-                </div>
-            )}
+            {/* MediaCarousel */}
+            {medias.length > 0 && <ItemMediaCarousel medias={medias} />}
 
             <CardHeader>
                 <h3 className="text-xl font-semibold text-gray-800">
@@ -146,17 +145,23 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             >
                                 <Heart
                                     className="h-6 w-6"
-                                    fill={localIsLiked ? 'currentColor' : 'none'}
+                                    fill={
+                                        localIsLiked ? 'currentColor' : 'none'
+                                    }
                                 />
                             </Button>
-                            <span className="text-gray-600">{localLikesCount}</span>
+                            <span className="text-gray-600">
+                                {localLikesCount}
+                            </span>
                         </div>
                     ) : (
                         // Si c'est son item, afficher juste le compteur
                         localLikesCount > 0 && (
                             <div className="flex items-center space-x-1">
                                 <Heart className="h-6 w-6 text-gray-400" />
-                                <span className="text-gray-600">{localLikesCount}</span>
+                                <span className="text-gray-600">
+                                    {localLikesCount}
+                                </span>
                             </div>
                         )
                     )}
@@ -176,17 +181,25 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             >
                                 <Star
                                     className="h-6 w-6"
-                                    fill={localIsFavorited ? 'currentColor' : 'none'}
+                                    fill={
+                                        localIsFavorited
+                                            ? 'currentColor'
+                                            : 'none'
+                                    }
                                 />
                             </Button>
-                            <span className="text-gray-600">{localFavoritesCount}</span>
+                            <span className="text-gray-600">
+                                {localFavoritesCount}
+                            </span>
                         </div>
                     ) : (
                         // Si c'est son item, afficher juste le compteur
                         localFavoritesCount > 0 && (
                             <div className="flex items-center space-x-1">
                                 <Star className="h-6 w-6 text-gray-400" />
-                                <span className="text-gray-600">{localFavoritesCount}</span>
+                                <span className="text-gray-600">
+                                    {localFavoritesCount}
+                                </span>
                             </div>
                         )
                     )}
@@ -194,7 +207,11 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                     {/* COMMENTS - Toujours visible (pour voir les commentaires) */}
                     <div className="flex items-center space-x-1">
                         <Button variant="ghost" size="icon" asChild>
-                            <Link href={route('items.show', item.id) + '#comments'}>
+                            <Link
+                                href={
+                                    route('items.show', item.id) + '#comments'
+                                }
+                            >
                                 <MessageCircle className="h-6 w-6" />
                             </Link>
                         </Button>

@@ -32,7 +32,10 @@ class User extends Authenticatable
         'bio',
         'rating',
         'total_ratings',
-        'is_admin'
+        'is_admin',
+        'postal_code',
+        'city',
+        'street_address',
     ];
 
     /**

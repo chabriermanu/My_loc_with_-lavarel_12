@@ -25,6 +25,7 @@ interface LoanCardProps {
     onApprove?: (loanId: number) => void;
     onReject?: (loanId: number) => void;
     onComplete?: (loanId: number) => void;
+    hideDetailsButton?: boolean;
 }
 
 export function LoanCard({
@@ -33,6 +34,7 @@ export function LoanCard({
     onApprove,
     onReject,
     onComplete,
+    hideDetailsButton = false,
 }: LoanCardProps) {
     const getStatusIcon = () => {
         switch (loan.status) {
@@ -80,6 +82,14 @@ export function LoanCard({
         });
     };
 
+    const formatDateTime = (date: string, time?: string) => {
+        const dateStr = formatDate(date);
+        if (time) {
+            return `${dateStr} à ${time}`;
+        }
+        return dateStr;
+    };
+
     return (
         <Card className="transition-shadow hover:shadow-lg">
             <CardHeader className="pb-3">
@@ -110,12 +120,21 @@ export function LoanCard({
                 </div>
 
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                            Du {formatDate(loan.start_date)} au{' '}
-                            {formatDate(loan.end_date)}
-                        </span>
+                    <div className="flex items-start gap-2 text-sm">
+                        <Calendar className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div className="flex flex-col">
+                            <span>
+                                <strong>Début :</strong>{' '}
+                                {formatDateTime(
+                                    loan.start_date,
+                                    loan.start_time,
+                                )}
+                            </span>
+                            <span>
+                                <strong>Fin :</strong>{' '}
+                                {formatDateTime(loan.end_date, loan.end_time)}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -165,9 +184,16 @@ export function LoanCard({
                     </Button>
                 )}
 
-                <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link href={`/loans/${loan.id}`}>Voir détails</Link>
-                </Button>
+                {!hideDetailsButton && (
+                    <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                    >
+                        <Link href={`/loans/${loan.id}`}>Voir détails</Link>
+                    </Button>
+                )}
             </CardFooter>
         </Card>
     );

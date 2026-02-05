@@ -62,10 +62,16 @@ export interface Loan {
     owner_id: number;
     borrower_id: number;
     start_date: string;
-    start_time: string; 
+    start_time: string;
     end_date: string;
-    end_time: string; 
-    status: 'pending' | 'approved' | 'in_progress' | 'completed' | 'cancelled' | 'overdue';
+    end_time: string;
+    status:
+        | 'pending'
+        | 'approved'
+        | 'in_progress'
+        | 'completed'
+        | 'cancelled'
+        | 'overdue';
     returned_at?: string;
     notes?: string;
     contact_requested: boolean;
@@ -82,6 +88,7 @@ export interface Loan {
     owner: User;
     borrower: User;
     messages: Message[];
+    
 }
 
 export interface Message {

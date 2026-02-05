@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import {
@@ -12,10 +11,12 @@ import {
     Package,
 } from 'lucide-react';
 
+declare function route(name: string, params?: any): string;
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard().url,
+        href: 'dashboard', // ✔ nom de route
     },
 ];
 
@@ -146,10 +147,10 @@ export default function Dashboard({
                     </Link>
                 </div>
 
-                {/* Deuxième ligne : 2 cards centrées */}
+                {/* Deuxième ligne : 2 cards */}
                 <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
                     {/* Card 4 : Mes prêts */}
-                    <Link href="/loans">
+                    <Link href={route('loans.lends')}>
                         <Card className="cursor-pointer border-white/20 bg-orange-600/20 backdrop-blur-md transition-all hover:scale-105">
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between">
@@ -179,7 +180,7 @@ export default function Dashboard({
                     </Link>
 
                     {/* Card 5 : Mes emprunts */}
-                    <Link href="/borrows">
+                    <Link href={route('loans.borrows')}>
                         <Card className="cursor-pointer border-white/20 bg-pink-600/20 backdrop-blur-md transition-all hover:scale-105">
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between">

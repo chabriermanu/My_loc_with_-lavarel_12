@@ -19,7 +19,7 @@ trait ProfileValidationRules
                 'required',
                 'string',
                 'max:255',
-                $userId 
+                $userId
                     ? Rule::unique('users', 'pseudo')->ignore($userId)
                     : 'unique:users,pseudo'
             ],
@@ -28,13 +28,18 @@ trait ProfileValidationRules
                 'string',
                 'email',
                 'max:255',
-                $userId 
-                    ? Rule::unique('users')->ignore($userId) // ← FIX ICI
+                $userId
+                    ? Rule::unique('users')->ignore($userId)
                     : 'unique:users'
             ],
             'first_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+
+            // ✅ NOUVEAUX CHAMPS DE LOCALISATION
+            'postal_code' => ['nullable', 'string', 'max:10'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'street_address' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

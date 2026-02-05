@@ -35,10 +35,12 @@ class Loan extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
+
+        // IMPORTANT : ne surtout pas caster en datetime
+        'start_time' => 'string',
+        'end_time' => 'string',
+
         'returned_at' => 'datetime',
-        // Nouvelles conversions
         'contact_requested_at' => 'datetime',
         'contact_shared_at' => 'datetime',
         'contact_requested' => 'boolean',
@@ -47,6 +49,7 @@ class Loan extends Model
         'share_phone' => 'boolean',
         'share_address' => 'boolean',
     ];
+
 
     // Relations existantes
     public function item(): BelongsTo
