@@ -4,63 +4,82 @@ namespace App\Policies;
 
 use App\Models\Category;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class CategoryPolicy
 {
     /**
-     * Determine whether the user can view any models.
+     * Voir toutes les catégories (public)
      */
-    public function viewAny(User $user): bool
+    public function viewAny(?User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Voir une catégorie (public)
      */
-    public function view(User $user, Category $category): bool
+    public function view(?User $user, Category $category): bool
     {
-        return false;
+        return true;
     }
 
     /**
-     * Determine whether the user can create models.
+     * Créer une catégorie (admin uniquement)
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->is_admin === true;
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Modifier une catégorie (admin uniquement)
      */
     public function update(User $user, Category $category): bool
     {
-        return false;
+        return $user->is_admin === true;
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Supprimer une catégorie (admin uniquement)
+     * 
+     * Conditions :
+     * 1. Doit être admin
+     * 2. Aucun item ne doit être lié
+     * 3. Aucune sous-catégorie ne doit exister
      */
     public function delete(User $user, Category $category): bool
     {
-        return false;
+        // 1. Seuls les admins
+        if (!$user->is_admin) {
+            return false;
+        }
+
+        // 2. Vérifier qu'aucun item n'est lié
+        if ($category->items()->exists()) {
+            return false;
+        }
+
+        // 3. Vérifier qu'il n'y a pas de sous-catégories
+        if ($category->children()->exists()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Restaurer une catégorie (admin uniquement)
      */
     public function restore(User $user, Category $category): bool
     {
-        return false;
+        return $user->is_admin === true;
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Supprimer définitivement (admin uniquement)
      */
     public function forceDelete(User $user, Category $category): bool
     {
-        return false;
+        return $user->is_admin === true;
     }
 }
