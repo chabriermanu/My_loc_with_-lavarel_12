@@ -1,2037 +1,869 @@
-# Guide d'implémentation - Système de Prêt avec Messagerie Interne
-## My Loc 2.0
+# 🏗️ Architecture MyLoc 2.0
+## Plateforme de partage d'objets et services
 
 ---
 
 ## 📋 Table des matières
 
-1. Architecture de la base de données
-2. Migrations Laravel
-3. Models et Relations
-4. Policies et Permissions
-5. Controllers
-6. Routes API
-7. Messagerie interne
-8. Frontend (exemples Vue.js)
-9. Notifications
-10. RGPD et Sécurité
+1. [Vue d'ensemble](#vue-densemble)
+2. [Stack technique](#stack-technique)
+3. [Architecture de la base de données](#architecture-de-la-base-de-données)
+4. [Structure du projet](#structure-du-projet)
+5. [Modèles et Relations](#modèles-et-relations)
+6. [Controllers et Routes](#controllers-et-routes)
+7. [Frontend Inertia.js + React](#frontend-inertiajs--react)
+8. [Services et Helpers](#services-et-helpers)
+9. [Sécurité et RGPD](#sécurité-et-rgpd)
+10. [Performance et Optimisations](#performance-et-optimisations)
 
 ---
 
-## 1. Architecture de la base de données
+## 1. Vue d'ensemble
+
+### Concept
+
+**MyLoc 2.0** est une plateforme hybride permettant aux utilisateurs de :
+- 📦 Partager et emprunter des **objets** entre particuliers
+- 🛠️ Proposer et réserver des **services**
+- 📍 Géolocaliser les annonces avec calcul de distance
+- 💬 Communiquer via un système de commentaires
+- ⭐ Noter et favoriser les annonces
+- 🔒 Respecter le RGPD avec consentement utilisateur
+
+### Philosophie technique
+
+- **SPA moderne** : Inertia.js pour le routing côté serveur avec expérience SPA
+- **Type safety** : TypeScript pour réduire les erreurs
+- **Component-based** : Architecture React modulaire et réutilisable
+- **API-first** : Endpoints REST pour les actions asynchrones
+- **RGPD compliant** : Système de consentement granulaire
+
+---
+
+## 2. Stack technique
+
+### Backend
+
+| Technologie | Version | Usage |
+|------------|---------|-------|
+| **Laravel** | 12 | Framework PHP principal |
+| **PHP** | 8.2+ | Langage backend |
+| **MySQL** | 8.0+ | Base de données relationnelle |
+| **Laravel Fortify** | - | Authentification (login, register, 2FA) |
+| **Inertia.js** | 1.x | Bridge Laravel ↔ React (SSR-like SPA) |
+| **Laravel Sanctum** | - | API tokens pour requêtes asynchrones |
+
+### Frontend
+
+| Technologie | Version | Usage |
+|------------|---------|-------|
+| **React** | 18 | Bibliothèque UI |
+| **TypeScript** | 5 | Typage statique JavaScript |
+| **Tailwind CSS** | 3 | Framework CSS utility-first |
+| **shadcn/ui** | - | Composants UI pré-stylisés |
+| **Lucide React** | - | Icônes SVG |
+| **Vite** | 5 | Build tool et dev server |
+
+### DevOps
+
+| Outil | Usage |
+|-------|-------|
+| **Git** | Versioning |
+| **Docker** | Containerisation (docker-compose.yaml) |
+| **Composer** | Gestionnaire de dépendances PHP |
+| **npm** | Gestionnaire de dépendances JS |
+| **Laravel Pint** | Code style PHP (PSR-12) |
+| **ESLint** | Linting TypeScript/React |
+
+---
+
+## 3. Architecture de la base de données
 
 ### Schéma des tables
 
 ```
-users
-├── id
-├── name
-├── email
-├── phone (nullable)
-├── city (nullable)
-├── postal_code (nullable)
-├── latitude (nullable)
-├── longitude (nullable)
-├── created_at
-└── updated_at
+┌─────────────────────────────────────────────────────────────┐
+│                      USERS (Utilisateurs)                    │
+├─────────────────────────────────────────────────────────────┤
+│ id, name, email, password, email_verified_at                │
+│ phone, city, postal_code, latitude, longitude               │
+│ created_at, updated_at                                      │
+└──────────────┬──────────────────────────────────────────────┘
+               │
+               ├───────────────────────────────────────┐
+               │                                       │
+               ▼                                       ▼
+┌──────────────────────────┐              ┌─────────────────────────┐
+│   ITEMS (Annonces)       │              │ USER_CONSENTS (RGPD)    │
+├──────────────────────────┤              ├─────────────────────────┤
+│ id, user_id (FK)         │              │ id, user_id (FK)        │
+│ category_id (FK)         │              │ consent_type (enum)     │
+│ name, description        │              │ accepted (bool)         │
+│ condition, type          │              │ accepted_at, revoked_at │
+│ available (bool)         │              │ ip_address              │
+│ favorites_count          │              │ created_at, updated_at  │
+│ latitude, longitude      │              └─────────────────────────┘
+│ created_at, updated_at   │
+└──────┬───────────────────┘
+       │
+       ├──────────────┬──────────────┬──────────────┐
+       │              │              │              │
+       ▼              ▼              ▼              ▼
+┌─────────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────────┐
+│ ITEM_MEDIA  │ │ COMMENTS │ │FAVORITES │ │ ITEM_REVIEWS    │
+├─────────────┤ ├──────────┤ ├──────────┤ ├─────────────────┤
+│ id          │ │ id       │ │ id       │ │ id              │
+│ item_id(FK) │ │ item_id  │ │ user_id  │ │ item_id (FK)    │
+│ file_path   │ │ user_id  │ │ item_id  │ │ user_id (FK)    │
+│ type (enum) │ │ parent_id│ │ created  │ │ rating (1-5)    │
+│ order       │ │ content  │ └──────────┘ │ comment         │
+└─────────────┘ │ created  │              │ created_at      │
+                └──────────┘              └─────────────────┘
 
-items
-├── id
-├── user_id (foreign → users)
-├── category_id (foreign → categories)
-├── name
-├── description
-├── available (boolean)
-├── created_at
-└── updated_at
+┌─────────────────────────────────────────────────────────────┐
+│              CATEGORIES (77 catégories)                      │
+├─────────────────────────────────────────────────────────────┤
+│ id, parent_id, name, slug, icon, type                       │
+│ popularity_score, view_count, created_at, updated_at        │
+└──────────────┬──────────────────────────────────────────────┘
+               │
+               └──► ITEMS.category_id (FK)
 
-loan_requests
-├── id
-├── item_id (foreign → items)
-├── borrower_id (foreign → users)
-├── lender_id (foreign → users)
-├── status (enum: pending, accepted, refused, completed, cancelled)
-├── start_date (nullable)
-├── end_date (nullable)
-├── accepted_at (nullable)
-├── refused_at (nullable)
-├── contact_requested (boolean, default: false)
-├── contact_requested_at (nullable)
-├── contact_shared (boolean, default: false)
-├── contact_shared_at (nullable)
-├── share_email (boolean, default: false)
-├── share_phone (boolean, default: false)
-├── share_address (boolean, default: false)
-├── created_at
-└── updated_at
+┌─────────────────────────────────────────────────────────────┐
+│           LOANS (Demandes de prêt/réservation)              │
+├─────────────────────────────────────────────────────────────┤
+│ id, item_id (FK), borrower_id (FK), lender_id (FK)         │
+│ status (enum: pending, accepted, refused, completed)        │
+│ start_date, end_date                                        │
+│ accepted_at, refused_at, completed_at, cancelled_at         │
+│ contact_requested (bool), contact_requested_at              │
+│ contact_shared (bool), contact_shared_at                    │
+│ share_email, share_phone, share_address (bool)              │
+│ created_at, updated_at                                      │
+└─────────────────────────────────────────────────────────────┘
 
-messages
-├── id
-├── loan_request_id (foreign → loan_requests)
-├── sender_id (foreign → users)
-├── receiver_id (foreign → users)
-├── content (text)
-├── read_at (nullable)
-├── created_at
-└── updated_at
+┌─────────────────────────────────────────────────────────────┐
+│                    MESSAGES (Messagerie)                     │
+├─────────────────────────────────────────────────────────────┤
+│ id, loan_id (FK), sender_id (FK), receiver_id (FK)         │
+│ content (text), read_at (nullable)                          │
+│ created_at, updated_at                                      │
+└─────────────────────────────────────────────────────────────┘
 
-user_consents
-├── id
-├── user_id (foreign → users)
-├── consent_type (string: geolocation, marketing, terms)
-├── accepted (boolean)
-├── accepted_at (nullable)
-├── ip_address (nullable)
-├── created_at
-└── updated_at
+┌─────────────────────────────────────────────────────────────┐
+│              USER_REVIEWS (Avis utilisateurs)                │
+├─────────────────────────────────────────────────────────────┤
+│ id, reviewer_id (FK), reviewed_id (FK)                      │
+│ loan_id (FK), role (as_owner / as_borrower)                 │
+│ communication_rating (1-5)                                   │
+│ punctuality_rating (1-5)                                     │
+│ respect_rating (1-5)                                         │
+│ overall_rating (1-5)                                         │
+│ comment (text)                                               │
+│ created_at, updated_at                                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Relations principales
+
+```
+User (1) ──────── (*) Items
+User (1) ──────── (*) Favorites
+User (1) ──────── (*) Comments
+User (1) ──────── (*) UserConsents
+User (1) ──────── (*) Loans (as borrower)
+User (1) ──────── (*) Loans (as lender)
+
+Item (1) ──────── (*) ItemMedia
+Item (1) ──────── (*) Comments
+Item (1) ──────── (*) Favorites
+Item (1) ──────── (*) ItemReviews
+Item (1) ──────── (*) Loans
+Item (*) ──────── (1) Category
+
+Category (1) ──── (*) Items
+Category (1) ──── (*) Categories (self-reference parent/enfant)
+
+Loan (1) ──────── (*) Messages
+
+Comment (1) ───── (*) Comments (self-reference parent/réponse)
 ```
 
 ---
 
-## 2. Migrations Laravel
+## 4. Structure du projet
 
-### Migration: Ajout colonnes localisation dans users
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('phone', 20)->nullable()->after('email');
-            $table->string('city', 100)->nullable()->after('phone');
-            $table->string('postal_code', 10)->nullable()->after('city');
-            $table->decimal('latitude', 10, 7)->nullable()->after('postal_code');
-            $table->decimal('longitude', 10, 7)->nullable()->after('latitude');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn([
-                'phone', 
-                'city', 
-                'postal_code', 
-                'latitude', 
-                'longitude'
-            ]);
-        });
-    }
-};
 ```
-
-### Migration: Table loan_requests
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::create('loan_requests', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('item_id')->constrained()->onDelete('cascade');
-            $table->foreignId('borrower_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('lender_id')->constrained('users')->onDelete('cascade');
-            
-            $table->enum('status', [
-                'pending', 
-                'accepted', 
-                'refused', 
-                'completed', 
-                'cancelled'
-            ])->default('pending');
-            
-            $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();
-            $table->timestamp('accepted_at')->nullable();
-            $table->timestamp('refused_at')->nullable();
-            
-            // Partage de coordonnées
-            $table->boolean('contact_requested')->default(false);
-            $table->timestamp('contact_requested_at')->nullable();
-            $table->boolean('contact_shared')->default(false);
-            $table->timestamp('contact_shared_at')->nullable();
-            
-            // Choix de ce qui est partagé
-            $table->boolean('share_email')->default(false);
-            $table->boolean('share_phone')->default(false);
-            $table->boolean('share_address')->default(false);
-            
-            $table->timestamps();
-            
-            // Index pour performance
-            $table->index(['borrower_id', 'status']);
-            $table->index(['lender_id', 'status']);
-            $table->index('item_id');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('loan_requests');
-    }
-};
-```
-
-### Migration: Table messages
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::create('messages', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('loan_request_id')->constrained()->onDelete('cascade');
-            $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
-            $table->text('content');
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
-            
-            // Index pour performance
-            $table->index(['loan_request_id', 'created_at']);
-            $table->index(['receiver_id', 'read_at']);
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('messages');
-    }
-};
-```
-
-### Migration: Table user_consents (RGPD)
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::create('user_consents', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('consent_type'); // geolocation, marketing, terms
-            $table->boolean('accepted');
-            $table->timestamp('accepted_at')->nullable();
-            $table->ipAddress('ip_address')->nullable();
-            $table->timestamps();
-            
-            // Un user ne peut avoir qu'un seul consentement par type
-            $table->unique(['user_id', 'consent_type']);
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('user_consents');
-    }
-};
+My_loc_with_-lavarel_12/
+│
+├── app/
+│   ├── Console/
+│   │   └── Commands/
+│   │       └── GeolocateExistingUsers.php       # Commande Artisan géoloc
+│   │
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── CategoryController.php           # CRUD catégories (admin)
+│   │   │   ├── ItemController.php               # CRUD items
+│   │   │   ├── LoanController.php               # Gestion prêts
+│   │   │   ├── FavoriteController.php           # Toggle favoris
+│   │   │   ├── CommentController.php            # CRUD commentaires
+│   │   │   ├── ItemMediaController.php          # Upload médias
+│   │   │   ├── ItemReviewController.php         # Avis items
+│   │   │   ├── UserReviewController.php         # Avis utilisateurs
+│   │   │   ├── LocationController.php           # Géoloc utilisateur
+│   │   │   └── Api/
+│   │   │       └── ConsentController.php        # API consentement RGPD
+│   │   │
+│   │   ├── Middleware/
+│   │   │   ├── HandleInertiaRequests.php        # Props globales Inertia
+│   │   │   └── CheckGeolocationConsent.php      # Vérif consentement
+│   │   │
+│   │   └── Requests/
+│   │       ├── StoreCategoryRequest.php
+│   │       ├── StoreItemRequest.php
+│   │       ├── StoreLoanRequest.php
+│   │       ├── StoreCommentRequest.php
+│   │       └── ... (14 Form Requests total)
+│   │
+│   ├── Models/
+│   │   ├── User.php                             # + géolocalisation
+│   │   ├── Item.php                             # + popularité
+│   │   ├── Category.php                         # + hiérarchie
+│   │   ├── Loan.php                             # + partage contact
+│   │   ├── Favorite.php
+│   │   ├── Comment.php                          # + réponses imbriquées
+│   │   ├── ItemMedia.php
+│   │   ├── ItemReview.php
+│   │   ├── UserReview.php                       # + 4 critères
+│   │   ├── UserConsent.php                      # RGPD
+│   │   └── Message.php
+│   │
+│   ├── Policies/
+│   │   ├── ItemPolicy.php
+│   │   ├── LoanPolicy.php
+│   │   ├── CommentPolicy.php
+│   │   └── MessagePolicy.php
+│   │
+│   ├── Services/
+│   │   └── GeocodingService.php                 # Service géocodage externe
+│   │
+│   └── Actions/
+│       └── Fortify/
+│           └── CreateNewUser.php                # + géoloc auto à l'inscription
+│
+├── database/
+│   ├── migrations/
+│   │   ├── 2014_10_12_000000_create_users_table.php
+│   │   ├── 2024_xx_xx_create_categories_table.php
+│   │   ├── 2024_xx_xx_create_items_table.php
+│   │   ├── 2024_xx_xx_create_loans_table.php
+│   │   ├── 2024_xx_xx_create_favorites_table.php
+│   │   ├── 2024_xx_xx_create_comments_table.php
+│   │   ├── 2024_xx_xx_create_item_media_table.php
+│   │   ├── 2024_xx_xx_create_item_reviews_table.php
+│   │   ├── 2024_xx_xx_create_user_reviews_table.php
+│   │   ├── 2026_02_02_create_user_consents_table.php
+│   │   └── 2026_02_06_add_revoked_at_to_user_consents_table.php
+│   │
+│   ├── seeders/
+│   │   ├── DatabaseSeeder.php
+│   │   ├── CategorySeeder.php                   # 77 catégories
+│   │   ├── UserSeeder.php
+│   │   └── ItemSeeder.php
+│   │
+│   └── factories/
+│       ├── UserFactory.php
+│       ├── ItemFactory.php
+│       └── LoanFactory.php
+│
+├── resources/
+│   ├── js/
+│   │   ├── app.tsx                              # Point d'entrée React
+│   │   │
+│   │   ├── Pages/                               # Pages Inertia
+│   │   │   ├── Welcome.tsx                      # Page d'accueil
+│   │   │   ├── Dashboard.tsx
+│   │   │   │
+│   │   │   ├── Items/
+│   │   │   │   ├── Index.tsx                    # Liste items (public)
+│   │   │   │   ├── Show.tsx                     # Détails item (public)
+│   │   │   │   ├── Create.tsx                   # Créer item (privé)
+│   │   │   │   └── Edit.tsx                     # Éditer item (privé)
+│   │   │   │
+│   │   │   ├── Categories/
+│   │   │   │   ├── Index.tsx                    # Grille catégories (public)
+│   │   │   │   ├── Show.tsx                     # Items par catégorie (public)
+│   │   │   │   ├── Create.tsx                   # Admin uniquement
+│   │   │   │   └── Edit.tsx                     # Admin uniquement
+│   │   │   │
+│   │   │   ├── Loans/
+│   │   │   │   ├── Index.tsx                    # Mes prêts (onglets)
+│   │   │   │   └── Show.tsx                     # Détails prêt + messagerie
+│   │   │   │
+│   │   │   ├── Favorites/
+│   │   │   │   └── Index.tsx                    # Mes favoris
+│   │   │   │
+│   │   │   ├── Legal/
+│   │   │   │   ├── PrivacyPolicy.tsx            # Politique confidentialité
+│   │   │   │   └── Terms.tsx                    # CGU
+│   │   │   │
+│   │   │   └── settings/
+│   │   │       └── Location.tsx                 # Gestion localisation
+│   │   │
+│   │   ├── components/
+│   │   │   ├── Items/
+│   │   │   │   ├── ItemCard.tsx                 # Carte item (réutilisable)
+│   │   │   │   └── ItemMediaCarousel.tsx        # Galerie photos/vidéos
+│   │   │   │
+│   │   │   ├── Consent/
+│   │   │   │   └── FirstLoginConsentModal.tsx   # Modale RGPD
+│   │   │   │
+│   │   │   └── ui/                              # Composants shadcn/ui
+│   │   │       ├── button.tsx
+│   │   │       ├── input.tsx
+│   │   │       ├── card.tsx
+│   │   │       └── ... (25+ composants)
+│   │   │
+│   │   ├── layouts/
+│   │   │   └── app-layout.tsx                   # Layout principal (navbar, footer)
+│   │   │
+│   │   ├── types/
+│   │   │   ├── model.ts                         # Types TypeScript des modèles
+│   │   │   └── index.d.ts                       # Types globaux
+│   │   │
+│   │   └── lib/
+│   │       └── utils.ts                         # Helpers (cn, formatDate...)
+│   │
+│   └── views/
+│       └── app.blade.php                        # Template racine Inertia
+│
+├── routes/
+│   ├── web.php                                  # Routes Inertia (SSR-like)
+│   └── api.php                                  # Routes API (async requests)
+│
+├── public/
+│   └── storage/                                 # Symlink vers storage/app/public
+│       └── items/                               # Photos items
+│
+├── storage/
+│   └── app/
+│       └── public/
+│           └── items/                           # Stockage photos
+│
+├── tests/
+│   ├── Feature/
+│   │   ├── ItemTest.php
+│   │   ├── LoanTest.php
+│   │   └── AuthTest.php
+│   └── Unit/
+│       ├── GeocodingServiceTest.php
+│       └── UserConsentTest.php
+│
+├── .env.example                                 # Variables d'environnement
+├── composer.json                                # Dépendances PHP
+├── package.json                                 # Dépendances JS
+├── docker-compose.yaml                          # Configuration Docker
+├── vite.config.ts                               # Configuration Vite
+├── tsconfig.json                                # Configuration TypeScript
+├── tailwind.config.js                           # Configuration Tailwind
+├── README.md                                    # Documentation projet
+├── ROADMAP.md                                   # Plan de développement
+└── Architecture.md                              # Ce fichier
 ```
 
 ---
 
-## 3. Models et Relations
+## 5. Modèles et Relations
 
-### Model: User
+### User (Utilisateur)
 
 ```php
-<?php
-
-namespace App\Models;
-
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
-
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'city',
-        'postal_code',
-        'latitude',
-        'longitude',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'latitude' => 'decimal:7',
-            'longitude' => 'decimal:7',
-        ];
-    }
-
     // Relations
-    public function items()
-    {
-        return $this->hasMany(Item::class);
-    }
-
-    public function loanRequestsAsBorrower()
-    {
-        return $this->hasMany(LoanRequest::class, 'borrower_id');
-    }
-
-    public function loanRequestsAsLender()
-    {
-        return $this->hasMany(LoanRequest::class, 'lender_id');
-    }
-
-    public function sentMessages()
-    {
-        return $this->hasMany(Message::class, 'sender_id');
-    }
-
-    public function receivedMessages()
-    {
-        return $this->hasMany(Message::class, 'receiver_id');
-    }
-
-    public function consents()
-    {
-        return $this->hasMany(UserConsent::class);
-    }
-
-    // Accessors pour la localisation
-    public function getPublicLocationAttribute(): string
-    {
-        if (!$this->city) {
-            return 'Non renseignée';
-        }
-        
-        $department = substr($this->postal_code ?? '', 0, 2);
-        return $this->city . ($department ? " ({$department})" : '');
-    }
-
-    public function getFullAddressAttribute(): ?string
-    {
-        if (!$this->city || !$this->postal_code) {
-            return null;
-        }
-        
-        return trim(
-            ($this->street_address ?? '') . ', ' . 
-            $this->postal_code . ' ' . 
-            $this->city
-        );
-    }
-
-    // Vérifier si l'utilisateur a donné un consentement
+    public function items() // Items créés
+    public function favorites() // Items favoris
+    public function comments() // Commentaires postés
+    public function consents() // Consentements RGPD
+    public function loanRequestsAsBorrower() // Prêts empruntés
+    public function loanRequestsAsLender() // Prêts prêtés
+    public function sentMessages() // Messages envoyés
+    public function receivedMessages() // Messages reçus
+    public function reviewsGiven() // Avis donnés
+    public function reviewsReceived() // Avis reçus
+    
+    // Accessors
+    public function getPublicLocationAttribute(): string // "Montpellier (34)"
+    public function getFullAddressAttribute(): ?string // Adresse complète
+    
+    // Méthodes
     public function hasConsent(string $type): bool
-    {
-        return $this->consents()
-            ->where('consent_type', $type)
-            ->where('accepted', true)
-            ->exists();
-    }
 }
 ```
 
-### Model: LoanRequest
+### Item (Annonce)
 
 ```php
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-
-class LoanRequest extends Model
+class Item extends Model
 {
-    protected $fillable = [
-        'item_id',
-        'borrower_id',
-        'lender_id',
-        'status',
-        'start_date',
-        'end_date',
-        'accepted_at',
-        'refused_at',
-        'contact_requested',
-        'contact_requested_at',
-        'contact_shared',
-        'contact_shared_at',
-        'share_email',
-        'share_phone',
-        'share_address',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'accepted_at' => 'datetime',
-            'refused_at' => 'datetime',
-            'contact_requested_at' => 'datetime',
-            'contact_shared_at' => 'datetime',
-            'contact_requested' => 'boolean',
-            'contact_shared' => 'boolean',
-            'share_email' => 'boolean',
-            'share_phone' => 'boolean',
-            'share_address' => 'boolean',
-        ];
-    }
-
     // Relations
-    public function item(): BelongsTo
-    {
-        return $this->belongsTo(Item::class);
-    }
+    public function owner() // Propriétaire (User)
+    public function category() // Catégorie
+    public function media() // Photos/vidéos
+    public function comments() // Commentaires
+    public function favorites() // Favoris (pivot)
+    public function reviews() // Avis
+    public function loans() // Prêts
+    
+    // Scopes
+    public function scopeAvailable($query) // Disponibles
+    public function scopeNearby($query, $lat, $lng, $radius) // À proximité
+    public function scopeWithinDistance($query, User $user, int $maxKm)
+    
+    // Méthodes
+    public function isFavoritedBy(User $user): bool
+    public function getDistanceFrom(float $lat, float $lng): float // km
+    public function incrementPopularity(): void
+}
+```
 
-    public function borrower(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'borrower_id');
-    }
+### Category (Catégorie)
 
-    public function lender(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'lender_id');
-    }
+```php
+class Category extends Model
+{
+    // Relations
+    public function parent() // Catégorie parente
+    public function children() // Sous-catégories
+    public function items() // Items de cette catégorie
+    
+    // Scopes
+    public function scopeParents($query) // Catégories racines
+    public function scopePopular($query) // Par popularité
+    
+    // Méthodes
+    public function isParent(): bool
+    public function hasChildren(): bool
+}
+```
 
-    public function messages(): HasMany
-    {
-        return $this->hasMany(Message::class);
-    }
+### Loan (Prêt/Réservation)
 
+```php
+class Loan extends Model
+{
+    // Relations
+    public function item() // Item emprunté
+    public function borrower() // Emprunteur (User)
+    public function lender() // Prêteur (User)
+    public function messages() // Messagerie interne
+    
     // Scopes
     public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
     public function scopeAccepted($query)
-    {
-        return $query->where('status', 'accepted');
-    }
-
     public function scopeForUser($query, User $user)
-    {
-        return $query->where(function ($q) use ($user) {
-            $q->where('borrower_id', $user->id)
-              ->orWhere('lender_id', $user->id);
-        });
-    }
-
-    // Méthodes métier
+    
+    // Méthodes
     public function accept(): void
-    {
-        $this->update([
-            'status' => 'accepted',
-            'accepted_at' => now(),
-        ]);
-    }
-
     public function refuse(): void
-    {
-        $this->update([
-            'status' => 'refused',
-            'refused_at' => now(),
-        ]);
-    }
-
+    public function complete(): void
+    public function cancel(): void
     public function requestContact(): void
-    {
-        if ($this->status !== 'accepted') {
-            throw new \Exception('Can only request contact for accepted loans');
-        }
-
-        $this->update([
-            'contact_requested' => true,
-            'contact_requested_at' => now(),
-        ]);
-    }
-
-    public function shareContact(array $shareOptions): void
-    {
-        if (!$this->contact_requested) {
-            throw new \Exception('Contact must be requested first');
-        }
-
-        $this->update([
-            'contact_shared' => true,
-            'contact_shared_at' => now(),
-            'share_email' => $shareOptions['email'] ?? false,
-            'share_phone' => $shareOptions['phone'] ?? false,
-            'share_address' => $shareOptions['address'] ?? false,
-        ]);
-    }
-
+    public function shareContact(array $options): void
     public function canViewContactInfo(User $user): bool
-    {
-        return $this->status === 'accepted' 
-            && $this->contact_shared 
-            && $this->borrower_id === $user->id;
-    }
-
     public function getSharedContactInfo(): array
-    {
-        if (!$this->contact_shared) {
-            return [];
-        }
-
-        $info = [];
-
-        if ($this->share_email) {
-            $info['email'] = $this->lender->email;
-        }
-
-        if ($this->share_phone && $this->lender->phone) {
-            $info['phone'] = $this->lender->phone;
-        }
-
-        if ($this->share_address && $this->lender->full_address) {
-            $info['address'] = $this->lender->full_address;
-        }
-
-        return $info;
-    }
 }
 ```
 
-### Model: Message
+### UserConsent (Consentement RGPD)
 
 ```php
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-class Message extends Model
-{
-    protected $fillable = [
-        'loan_request_id',
-        'sender_id',
-        'receiver_id',
-        'content',
-        'read_at',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'read_at' => 'datetime',
-        ];
-    }
-
-    // Relations
-    public function loanRequest(): BelongsTo
-    {
-        return $this->belongsTo(LoanRequest::class);
-    }
-
-    public function sender(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'sender_id');
-    }
-
-    public function receiver(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'receiver_id');
-    }
-
-    // Scopes
-    public function scopeUnread($query)
-    {
-        return $query->whereNull('read_at');
-    }
-
-    public function scopeForConversation($query, int $loanRequestId)
-    {
-        return $query->where('loan_request_id', $loanRequestId)
-                     ->orderBy('created_at', 'asc');
-    }
-
-    // Méthodes métier
-    public function markAsRead(): void
-    {
-        if (!$this->read_at) {
-            $this->update(['read_at' => now()]);
-        }
-    }
-
-    public function isUnread(): bool
-    {
-        return $this->read_at === null;
-    }
-}
-```
-
-### Model: UserConsent
-
-```php
-<?php
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 class UserConsent extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'consent_type',
-        'accepted',
-        'accepted_at',
-        'ip_address',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'accepted' => 'boolean',
-            'accepted_at' => 'datetime',
-        ];
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
+    // Types de consentement
+    const TYPE_GEOLOCATION = 'geolocation';
+    const TYPE_MARKETING = 'marketing';
+    const TYPE_TERMS = 'terms';
+    
+    // Relations
+    public function user()
+    
+    // Méthodes
+    public function isActive(): bool
+    public function revoke(): void
 }
 ```
 
 ---
 
-## 4. Policies et Permissions
+## 6. Controllers et Routes
 
-### Policy: LoanRequestPolicy
+### Inertia Routes (SSR-like SPA)
 
 ```php
-<?php
+// routes/web.php
 
-namespace App\Policies;
+// Pages publiques (sans auth)
+Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
+Route::get('/items', [ItemController::class, 'index'])->name('items.index');
+Route::get('/items/{item}', [ItemController::class, 'show'])->name('items.show');
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+Route::get('/legal/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('/legal/terms', [LegalController::class, 'terms'])->name('legal.terms');
 
-use App\Models\LoanRequest;
-use App\Models\User;
-
-class LoanRequestPolicy
-{
-    /**
-     * Voir une demande de prêt
-     */
-    public function view(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->borrower_id === $user->id 
-            || $loanRequest->lender_id === $user->id;
-    }
-
-    /**
-     * Créer une demande de prêt
-     */
-    public function create(User $user): bool
-    {
-        // L'utilisateur ne peut pas emprunter son propre item (vérifié au niveau controller)
-        return true;
-    }
-
-    /**
-     * Accepter une demande
-     */
-    public function accept(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->lender_id === $user->id 
-            && $loanRequest->status === 'pending';
-    }
-
-    /**
-     * Refuser une demande
-     */
-    public function refuse(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->lender_id === $user->id 
-            && $loanRequest->status === 'pending';
-    }
-
-    /**
-     * Annuler une demande
-     */
-    public function cancel(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->borrower_id === $user->id 
-            && $loanRequest->status === 'pending';
-    }
-
-    /**
-     * Demander les coordonnées
-     */
-    public function requestContact(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->borrower_id === $user->id 
-            && $loanRequest->status === 'accepted'
-            && !$loanRequest->contact_requested;
-    }
-
-    /**
-     * Partager les coordonnées
-     */
-    public function shareContact(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->lender_id === $user->id 
-            && $loanRequest->contact_requested
-            && !$loanRequest->contact_shared;
-    }
-
-    /**
-     * Voir les coordonnées complètes
-     */
-    public function viewContactInfo(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->borrower_id === $user->id 
-            && $loanRequest->status === 'accepted'
-            && $loanRequest->contact_shared;
-    }
-
-    /**
-     * Envoyer un message
-     */
-    public function sendMessage(User $user, LoanRequest $loanRequest): bool
-    {
-        return $loanRequest->borrower_id === $user->id 
-            || $loanRequest->lender_id === $user->id;
-    }
-}
+// Pages privées (auth required)
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Items (CRUD)
+    Route::get('/items/create', [ItemController::class, 'create'])->name('items.create');
+    Route::post('/items', [ItemController::class, 'store'])->name('items.store');
+    Route::get('/items/{item}/edit', [ItemController::class, 'edit'])->name('items.edit');
+    Route::put('/items/{item}', [ItemController::class, 'update'])->name('items.update');
+    Route::delete('/items/{item}', [ItemController::class, 'destroy'])->name('items.destroy');
+    
+    // Favoris
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+    Route::post('/favorites/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
+    
+    // Prêts
+    Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
+    Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');
+    Route::get('/loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
+    Route::post('/loans/{loan}/approve', [LoanController::class, 'approve'])->name('loans.approve');
+    Route::post('/loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
+    Route::post('/loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');
+    Route::post('/loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('loans.cancel');
+    
+    // Commentaires
+    Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    
+    // Localisation
+    Route::get('/settings/location', [LocationController::class, 'edit'])->name('settings.location');
+    Route::put('/settings/location', [LocationController::class, 'update'])->name('settings.location.update');
+    
+    // Admin uniquement
+    Route::middleware('admin')->group(function () {
+        Route::resource('categories', CategoryController::class)->except(['index', 'show']);
+    });
+});
 ```
 
-### Policy: MessagePolicy
+### API Routes (requêtes asynchrones)
 
 ```php
-<?php
-
-namespace App\Policies;
-
-use App\Models\Message;
-use App\Models\User;
-
-class MessagePolicy
-{
-    /**
-     * Voir un message
-     */
-    public function view(User $user, Message $message): bool
-    {
-        return $message->sender_id === $user->id 
-            || $message->receiver_id === $user->id;
-    }
-
-    /**
-     * Marquer comme lu
-     */
-    public function markAsRead(User $user, Message $message): bool
-    {
-        return $message->receiver_id === $user->id;
-    }
-}
-```
-
----
-
-## 5. Controllers
-
-### Controller: LoanRequestController
-
-```php
-<?php
-
-namespace App\Http\Controllers\Api;
-
-use App\Http\Controllers\Controller;
-use App\Models\LoanRequest;
-use App\Models\Item;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Gate;
-
-class LoanRequestController extends Controller
-{
-    /**
-     * Liste des demandes pour l'utilisateur connecté
-     */
-    public function index(Request $request): JsonResponse
-    {
-        $user = $request->user();
-        
-        $loanRequests = LoanRequest::forUser($user)
-            ->with(['item', 'borrower', 'lender'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
-        return response()->json($loanRequests);
-    }
-
-    /**
-     * Créer une nouvelle demande de prêt
-     */
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'start_date' => 'nullable|date|after:today',
-            'end_date' => 'nullable|date|after:start_date',
-        ]);
-
-        $item = Item::findOrFail($validated['item_id']);
-        
-        // Vérifier que l'utilisateur n'emprunte pas son propre item
-        if ($item->user_id === $request->user()->id) {
-            return response()->json([
-                'message' => 'Vous ne pouvez pas emprunter votre propre objet'
-            ], 422);
-        }
-
-        // Vérifier que l'item est disponible
-        if (!$item->available) {
-            return response()->json([
-                'message' => 'Cet objet n\'est plus disponible'
-            ], 422);
-        }
-
-        // Vérifier qu'il n'y a pas déjà une demande en cours
-        $existingRequest = LoanRequest::where('item_id', $item->id)
-            ->where('borrower_id', $request->user()->id)
-            ->whereIn('status', ['pending', 'accepted'])
-            ->first();
-
-        if ($existingRequest) {
-            return response()->json([
-                'message' => 'Vous avez déjà une demande en cours pour cet objet'
-            ], 422);
-        }
-
-        $loanRequest = LoanRequest::create([
-            'item_id' => $item->id,
-            'borrower_id' => $request->user()->id,
-            'lender_id' => $item->user_id,
-            'start_date' => $validated['start_date'] ?? null,
-            'end_date' => $validated['end_date'] ?? null,
-        ]);
-
-        // TODO: Envoyer notification au prêteur
-
-        return response()->json($loanRequest->load(['item', 'borrower']), 201);
-    }
-
-    /**
-     * Voir une demande
-     */
-    public function show(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('view', $loanRequest);
-
-        return response()->json(
-            $loanRequest->load(['item', 'borrower', 'lender', 'messages'])
-        );
-    }
-
-    /**
-     * Accepter une demande
-     */
-    public function accept(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('accept', $loanRequest);
-
-        $loanRequest->accept();
-
-        // TODO: Envoyer notification à l'emprunteur
-
-        return response()->json([
-            'message' => 'Demande acceptée',
-            'loan_request' => $loanRequest->fresh()
-        ]);
-    }
-
-    /**
-     * Refuser une demande
-     */
-    public function refuse(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('refuse', $loanRequest);
-
-        $loanRequest->refuse();
-
-        // TODO: Envoyer notification à l'emprunteur
-
-        return response()->json([
-            'message' => 'Demande refusée',
-            'loan_request' => $loanRequest->fresh()
-        ]);
-    }
-
-    /**
-     * Annuler une demande (côté emprunteur)
-     */
-    public function cancel(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('cancel', $loanRequest);
-
-        $loanRequest->update(['status' => 'cancelled']);
-
-        return response()->json([
-            'message' => 'Demande annulée'
-        ]);
-    }
-
-    /**
-     * Demander les coordonnées
-     */
-    public function requestContact(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('requestContact', $loanRequest);
-
-        $loanRequest->requestContact();
-
-        // TODO: Envoyer notification au prêteur
-
-        return response()->json([
-            'message' => 'Demande de coordonnées envoyée',
-            'loan_request' => $loanRequest->fresh()
-        ]);
-    }
-
-    /**
-     * Partager les coordonnées
-     */
-    public function shareContact(Request $request, LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('shareContact', $loanRequest);
-
-        $validated = $request->validate([
-            'share_email' => 'required|boolean',
-            'share_phone' => 'required|boolean',
-            'share_address' => 'required|boolean',
-        ]);
-
-        // Au moins une info doit être partagée
-        if (!$validated['share_email'] && !$validated['share_phone'] && !$validated['share_address']) {
-            return response()->json([
-                'message' => 'Vous devez partager au moins une information'
-            ], 422);
-        }
-
-        $loanRequest->shareContact([
-            'email' => $validated['share_email'],
-            'phone' => $validated['share_phone'],
-            'address' => $validated['share_address'],
-        ]);
-
-        // TODO: Envoyer notification à l'emprunteur
-
-        return response()->json([
-            'message' => 'Coordonnées partagées',
-            'loan_request' => $loanRequest->fresh()
-        ]);
-    }
-
-    /**
-     * Voir les coordonnées partagées
-     */
-    public function viewContactInfo(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('viewContactInfo', $loanRequest);
-
-        return response()->json([
-            'contact_info' => $loanRequest->getSharedContactInfo()
-        ]);
-    }
-}
-```
-
-### Controller: MessageController
-
-```php
-<?php
-
-namespace App\Http\Controllers\Api;
-
-use App\Http\Controllers\Controller;
-use App\Models\LoanRequest;
-use App\Models\Message;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Gate;
-
-class MessageController extends Controller
-{
-    /**
-     * Liste des messages pour une conversation
-     */
-    public function index(LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('view', $loanRequest);
-
-        $messages = Message::forConversation($loanRequest->id)
-            ->with(['sender', 'receiver'])
-            ->get();
-
-        // Marquer les messages non lus comme lus
-        $messages->where('receiver_id', auth()->id())
-                 ->where('read_at', null)
-                 ->each->markAsRead();
-
-        return response()->json($messages);
-    }
-
-    /**
-     * Envoyer un message
-     */
-    public function store(Request $request, LoanRequest $loanRequest): JsonResponse
-    {
-        Gate::authorize('sendMessage', $loanRequest);
-
-        $validated = $request->validate([
-            'content' => 'required|string|max:2000',
-        ]);
-
-        $user = $request->user();
-        
-        // Déterminer le destinataire
-        $receiverId = $loanRequest->borrower_id === $user->id 
-            ? $loanRequest->lender_id 
-            : $loanRequest->borrower_id;
-
-        $message = Message::create([
-            'loan_request_id' => $loanRequest->id,
-            'sender_id' => $user->id,
-            'receiver_id' => $receiverId,
-            'content' => $validated['content'],
-        ]);
-
-        // TODO: Envoyer notification temps réel (Pusher/Echo)
-
-        return response()->json($message->load(['sender', 'receiver']), 201);
-    }
-
-    /**
-     * Marquer un message comme lu
-     */
-    public function markAsRead(Message $message): JsonResponse
-    {
-        Gate::authorize('markAsRead', $message);
-
-        $message->markAsRead();
-
-        return response()->json(['message' => 'Message marqué comme lu']);
-    }
-
-    /**
-     * Nombre de messages non lus
-     */
-    public function unreadCount(Request $request): JsonResponse
-    {
-        $count = Message::where('receiver_id', $request->user()->id)
-            ->unread()
-            ->count();
-
-        return response()->json(['unread_count' => $count]);
-    }
-}
-```
-
----
-
-## 6. Routes API
-
-### Fichier: routes/api.php
-
-```php
-<?php
-
-use App\Http\Controllers\Api\LoanRequestController;
-use App\Http\Controllers\Api\MessageController;
-use Illuminate\Support\Facades\Route;
+// routes/api.php
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Consentement RGPD
+    Route::post('/consent', [ConsentController::class, 'store']);
+    Route::post('/consent/revoke', [ConsentController::class, 'revoke']);
     
-    // Demandes de prêt
-    Route::prefix('loan-requests')->group(function () {
-        Route::get('/', [LoanRequestController::class, 'index']);
-        Route::post('/', [LoanRequestController::class, 'store']);
-        Route::get('/{loanRequest}', [LoanRequestController::class, 'show']);
-        
-        // Actions sur les demandes
-        Route::post('/{loanRequest}/accept', [LoanRequestController::class, 'accept']);
-        Route::post('/{loanRequest}/refuse', [LoanRequestController::class, 'refuse']);
-        Route::post('/{loanRequest}/cancel', [LoanRequestController::class, 'cancel']);
-        
-        // Partage de coordonnées
-        Route::post('/{loanRequest}/request-contact', [LoanRequestController::class, 'requestContact']);
-        Route::post('/{loanRequest}/share-contact', [LoanRequestController::class, 'shareContact']);
-        Route::get('/{loanRequest}/contact-info', [LoanRequestController::class, 'viewContactInfo']);
-        
-        // Messages
-        Route::get('/{loanRequest}/messages', [MessageController::class, 'index']);
-        Route::post('/{loanRequest}/messages', [MessageController::class, 'store']);
-    });
-    
-    // Messages
-    Route::prefix('messages')->group(function () {
-        Route::get('/unread-count', [MessageController::class, 'unreadCount']);
-        Route::post('/{message}/mark-as-read', [MessageController::class, 'markAsRead']);
-    });
+    // Messagerie (si implémentée)
+    Route::get('/loans/{loan}/messages', [MessageController::class, 'index']);
+    Route::post('/loans/{loan}/messages', [MessageController::class, 'store']);
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
 });
 ```
 
 ---
 
-## 7. Messagerie interne - Implémentation Frontend
+## 7. Frontend Inertia.js + React
 
-### Composant Vue.js: LoanRequestChat.vue
+### Principe Inertia.js
 
-```vue
-<template>
-  <div class="chat-container">
-    <!-- En-tête -->
-    <div class="chat-header">
-      <h3>Conversation avec {{ otherUser.name }}</h3>
-      <span class="status-badge" :class="statusClass">
-        {{ loanRequest.status }}
-      </span>
-    </div>
+**Inertia.js** permet de créer des SPAs sans API REST classique :
+- Le serveur Laravel renvoie des **props** (données) au lieu de JSON
+- Le routage reste **côté serveur** (routes/web.php)
+- React consomme les props via le hook `usePage()`
+- Navigation sans rechargement avec `router.visit()` ou `<Link>`
 
-    <!-- Liste des messages -->
-    <div class="messages-list" ref="messagesList">
-      <div 
-        v-for="message in messages" 
-        :key="message.id"
-        :class="['message', message.sender_id === currentUser.id ? 'sent' : 'received']"
-      >
-        <div class="message-avatar">
-          {{ message.sender.name[0] }}
-        </div>
-        <div class="message-content">
-          <div class="message-author">{{ message.sender.name }}</div>
-          <div class="message-text">{{ message.content }}</div>
-          <div class="message-time">
-            {{ formatTime(message.created_at) }}
-            <span v-if="message.sender_id === currentUser.id && message.read_at" class="read-indicator">
-              ✓✓
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+### Flux de données
 
-    <!-- Formulaire d'envoi -->
-    <form @submit.prevent="sendMessage" class="message-form">
-      <textarea 
-        v-model="newMessage"
-        placeholder="Écrivez votre message..."
-        rows="3"
-        maxlength="2000"
-        required
-      ></textarea>
-      <button type="submit" :disabled="!newMessage.trim() || sending">
-        {{ sending ? 'Envoi...' : 'Envoyer' }}
-      </button>
-    </form>
+```
+┌──────────────┐
+│  User click  │
+└──────┬───────┘
+       │
+       ▼
+┌────────────────────────────┐
+│  <Link href="/items/123">  │  ◄─── Composant React
+└────────────┬───────────────┘
+             │
+             ▼
+┌──────────────────────────────────────────────┐
+│  Inertia.js intercepte + envoie requête XHR  │
+└────────────┬─────────────────────────────────┘
+             │
+             ▼
+┌──────────────────────────────────────────┐
+│  Route Laravel: /items/{item}            │
+│  ItemController@show                      │
+└────────────┬─────────────────────────────┘
+             │
+             ▼
+┌──────────────────────────────────────────┐
+│  return Inertia::render('Items/Show', [  │
+│      'item' => $item,                     │
+│      'comments' => $comments,             │
+│  ]);                                      │
+└────────────┬─────────────────────────────┘
+             │
+             ▼
+┌──────────────────────────────────────────┐
+│  React reçoit les props et re-render     │
+│  Sans rechargement de page !             │
+└──────────────────────────────────────────┘
+```
 
-    <!-- Zone de partage de coordonnées -->
-    <div v-if="showContactSection" class="contact-section">
-      <!-- Demande de coordonnées (emprunteur) -->
-      <div v-if="canRequestContact" class="contact-request">
-        <p>La demande a été acceptée ! Vous pouvez demander les coordonnées du prêteur.</p>
-        <button @click="requestContact" :disabled="requesting">
-          {{ requesting ? 'Envoi...' : 'Demander les coordonnées' }}
-        </button>
-      </div>
+### Exemple de page Inertia
 
-      <!-- Attente de partage (emprunteur) -->
-      <div v-else-if="isWaitingForContact" class="contact-waiting">
-        <p>⏳ Demande de coordonnées envoyée. En attente de la réponse du prêteur...</p>
-      </div>
+```tsx
+// resources/js/Pages/Items/Show.tsx
 
-      <!-- Partage de coordonnées (prêteur) -->
-      <div v-else-if="canShareContact" class="contact-share">
-        <h4>L'emprunteur demande vos coordonnées</h4>
-        <p>Choisissez les informations que vous souhaitez partager :</p>
-        
-        <div class="share-options">
-          <label>
-            <input type="checkbox" v-model="shareOptions.email">
-            Email ({{ currentUser.email }})
-          </label>
-          <label v-if="currentUser.phone">
-            <input type="checkbox" v-model="shareOptions.phone">
-            Téléphone ({{ currentUser.phone }})
-          </label>
-          <label v-if="currentUser.full_address">
-            <input type="checkbox" v-model="shareOptions.address">
-            Adresse ({{ currentUser.full_address }})
-          </label>
-        </div>
+import { Head, Link, router } from '@inertiajs/react';
+import { Item, User, Comment } from '@/types/model';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/components/ui/button';
 
-        <button 
-          @click="shareContact" 
-          :disabled="!hasSelectedOption || sharing"
-        >
-          {{ sharing ? 'Envoi...' : 'Partager les coordonnées' }}
-        </button>
-      </div>
+interface Props {
+    item: Item & { owner: User };
+    comments: Comment[];
+    auth: { user: User | null };
+}
 
-      <!-- Affichage des coordonnées (emprunteur) -->
-      <div v-else-if="contactShared" class="contact-display">
-        <h4>✅ Coordonnées du prêteur :</h4>
-        <div v-if="contactInfo.email" class="contact-item">
-          <strong>Email :</strong> 
-          <a :href="`mailto:${contactInfo.email}`">{{ contactInfo.email }}</a>
-        </div>
-        <div v-if="contactInfo.phone" class="contact-item">
-          <strong>Téléphone :</strong> 
-          <a :href="`tel:${contactInfo.phone}`">{{ contactInfo.phone }}</a>
-        </div>
-        <div v-if="contactInfo.address" class="contact-item">
-          <strong>Adresse :</strong> {{ contactInfo.address }}
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script>
-import axios from 'axios';
-import { ref, computed, onMounted, nextTick } from 'vue';
-
-export default {
-  name: 'LoanRequestChat',
-  props: {
-    loanRequestId: {
-      type: Number,
-      required: true
-    },
-    currentUser: {
-      type: Object,
-      required: true
-    }
-  },
-  setup(props) {
-    const loanRequest = ref(null);
-    const messages = ref([]);
-    const newMessage = ref('');
-    const sending = ref(false);
-    const requesting = ref(false);
-    const sharing = ref(false);
-    const contactInfo = ref({});
-    const shareOptions = ref({
-      email: false,
-      phone: false,
-      address: false
-    });
-    const messagesList = ref(null);
-
-    // Computed
-    const otherUser = computed(() => {
-      if (!loanRequest.value) return {};
-      return loanRequest.value.borrower_id === props.currentUser.id
-        ? loanRequest.value.lender
-        : loanRequest.value.borrower;
-    });
-
-    const statusClass = computed(() => {
-      const statusMap = {
-        pending: 'status-pending',
-        accepted: 'status-accepted',
-        refused: 'status-refused',
-        completed: 'status-completed'
-      };
-      return statusMap[loanRequest.value?.status] || '';
-    });
-
-    const showContactSection = computed(() => {
-      return loanRequest.value?.status === 'accepted';
-    });
-
-    const canRequestContact = computed(() => {
-      return loanRequest.value?.borrower_id === props.currentUser.id
-        && loanRequest.value?.status === 'accepted'
-        && !loanRequest.value?.contact_requested;
-    });
-
-    const isWaitingForContact = computed(() => {
-      return loanRequest.value?.contact_requested 
-        && !loanRequest.value?.contact_shared
-        && loanRequest.value?.borrower_id === props.currentUser.id;
-    });
-
-    const canShareContact = computed(() => {
-      return loanRequest.value?.lender_id === props.currentUser.id
-        && loanRequest.value?.contact_requested
-        && !loanRequest.value?.contact_shared;
-    });
-
-    const contactShared = computed(() => {
-      return loanRequest.value?.contact_shared 
-        && loanRequest.value?.borrower_id === props.currentUser.id;
-    });
-
-    const hasSelectedOption = computed(() => {
-      return shareOptions.value.email 
-        || shareOptions.value.phone 
-        || shareOptions.value.address;
-    });
-
-    // Methods
-    async function loadLoanRequest() {
-      try {
-        const response = await axios.get(`/api/loan-requests/${props.loanRequestId}`);
-        loanRequest.value = response.data;
-      } catch (error) {
-        console.error('Erreur chargement demande:', error);
-      }
-    }
-
-    async function loadMessages() {
-      try {
-        const response = await axios.get(`/api/loan-requests/${props.loanRequestId}/messages`);
-        messages.value = response.data;
-        await nextTick();
-        scrollToBottom();
-      } catch (error) {
-        console.error('Erreur chargement messages:', error);
-      }
-    }
-
-    async function sendMessage() {
-      if (!newMessage.value.trim() || sending.value) return;
-
-      sending.value = true;
-      try {
-        const response = await axios.post(
-          `/api/loan-requests/${props.loanRequestId}/messages`,
-          { content: newMessage.value }
-        );
-        messages.value.push(response.data);
-        newMessage.value = '';
-        await nextTick();
-        scrollToBottom();
-      } catch (error) {
-        console.error('Erreur envoi message:', error);
-        alert('Erreur lors de l\'envoi du message');
-      } finally {
-        sending.value = false;
-      }
-    }
-
-    async function requestContact() {
-      requesting.value = true;
-      try {
-        await axios.post(`/api/loan-requests/${props.loanRequestId}/request-contact`);
-        await loadLoanRequest();
-        alert('Demande de coordonnées envoyée !');
-      } catch (error) {
-        console.error('Erreur demande coordonnées:', error);
-        alert('Erreur lors de la demande');
-      } finally {
-        requesting.value = false;
-      }
-    }
-
-    async function shareContact() {
-      if (!hasSelectedOption.value || sharing.value) return;
-
-      sharing.value = true;
-      try {
-        await axios.post(
-          `/api/loan-requests/${props.loanRequestId}/share-contact`,
-          {
-            share_email: shareOptions.value.email,
-            share_phone: shareOptions.value.phone,
-            share_address: shareOptions.value.address
-          }
-        );
-        await loadLoanRequest();
-        alert('Coordonnées partagées !');
-      } catch (error) {
-        console.error('Erreur partage coordonnées:', error);
-        alert('Erreur lors du partage');
-      } finally {
-        sharing.value = false;
-      }
-    }
-
-    async function loadContactInfo() {
-      if (!contactShared.value) return;
-
-      try {
-        const response = await axios.get(
-          `/api/loan-requests/${props.loanRequestId}/contact-info`
-        );
-        contactInfo.value = response.data.contact_info;
-      } catch (error) {
-        console.error('Erreur chargement coordonnées:', error);
-      }
-    }
-
-    function scrollToBottom() {
-      if (messagesList.value) {
-        messagesList.value.scrollTop = messagesList.value.scrollHeight;
-      }
-    }
-
-    function formatTime(timestamp) {
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diff = now - date;
-      
-      if (diff < 60000) return 'À l\'instant';
-      if (diff < 3600000) return `Il y a ${Math.floor(diff / 60000)} min`;
-      if (diff < 86400000) return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    }
-
-    // Lifecycle
-    onMounted(async () => {
-      await loadLoanRequest();
-      await loadMessages();
-      if (contactShared.value) {
-        await loadContactInfo();
-      }
-      
-      // Polling pour nouveaux messages (à remplacer par WebSocket/Pusher en prod)
-      setInterval(loadMessages, 10000);
-    });
-
-    return {
-      loanRequest,
-      messages,
-      newMessage,
-      sending,
-      requesting,
-      sharing,
-      contactInfo,
-      shareOptions,
-      messagesList,
-      otherUser,
-      statusClass,
-      showContactSection,
-      canRequestContact,
-      isWaitingForContact,
-      canShareContact,
-      contactShared,
-      hasSelectedOption,
-      sendMessage,
-      requestContact,
-      shareContact,
-      formatTime
+export default function Show({ item, comments, auth }: Props) {
+    const handleBorrow = () => {
+        router.post('/loans', { item_id: item.id });
     };
-  }
+
+    return (
+        <AppLayout>
+            <Head title={item.name} />
+            
+            <div className="max-w-7xl mx-auto py-6">
+                <h1 className="text-3xl font-bold">{item.name}</h1>
+                <p>{item.description}</p>
+                
+                {auth.user && auth.user.id !== item.owner.id && (
+                    <Button onClick={handleBorrow}>
+                        Demander à emprunter
+                    </Button>
+                )}
+                
+                {/* Liste des commentaires */}
+                <div className="mt-8">
+                    {comments.map(comment => (
+                        <div key={comment.id}>{comment.content}</div>
+                    ))}
+                </div>
+            </div>
+        </AppLayout>
+    );
+}
+```
+
+### Props globales (middleware)
+
+```php
+// app/Http/Middleware/HandleInertiaRequests.php
+
+public function share(Request $request): array
+{
+    return [
+        ...parent::share($request),
+        'auth' => [
+            'user' => $request->user(),
+        ],
+        'flash' => [
+            'success' => fn () => $request->session()->get('success'),
+            'error' => fn () => $request->session()->get('error'),
+        ],
+        'unreadMessagesCount' => fn () => $request->user()?->unreadMessages()->count() ?? 0,
+    ];
+}
+```
+
+### Formulaires Inertia
+
+```tsx
+import { useForm } from '@inertiajs/react';
+
+const { data, setData, post, processing, errors } = useForm({
+    name: '',
+    description: '',
+});
+
+const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post('/items');
 };
-</script>
 
-<style scoped>
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 600px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.chat-header {
-  padding: 1rem;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.status-pending { background: #fef3cd; color: #856404; }
-.status-accepted { background: #d4edda; color: #155724; }
-.status-refused { background: #f8d7da; color: #721c24; }
-.status-completed { background: #d1ecf1; color: #0c5460; }
-
-.messages-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  background: #fafafa;
-}
-
-.message {
-  display: flex;
-  margin-bottom: 1rem;
-  gap: 0.5rem;
-}
-
-.message.sent {
-  flex-direction: row-reverse;
-}
-
-.message-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #007bff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0;
-}
-
-.message.sent .message-avatar {
-  background: #28a745;
-}
-
-.message-content {
-  max-width: 70%;
-  background: white;
-  padding: 0.75rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-.message.sent .message-content {
-  background: #dcf8c6;
-}
-
-.message-author {
-  font-weight: 600;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.message-text {
-  margin-bottom: 0.25rem;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.message-time {
-  font-size: 0.75rem;
-  color: #666;
-  text-align: right;
-}
-
-.read-indicator {
-  color: #4CAF50;
-  margin-left: 0.25rem;
-}
-
-.message-form {
-  padding: 1rem;
-  background: white;
-  border-top: 1px solid #e0e0e0;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.message-form textarea {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  resize: none;
-  font-family: inherit;
-}
-
-.message-form button {
-  padding: 0.5rem 1.5rem;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.message-form button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.contact-section {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
-}
-
-.contact-request,
-.contact-waiting,
-.contact-share,
-.contact-display {
-  padding: 1rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.contact-request button,
-.contact-share button {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.share-options {
-  margin: 1rem 0;
-}
-
-.share-options label {
-  display: block;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-}
-
-.share-options input {
-  margin-right: 0.5rem;
-}
-
-.contact-display h4 {
-  color: #28a745;
-  margin-bottom: 1rem;
-}
-
-.contact-item {
-  margin-bottom: 0.75rem;
-  padding: 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.contact-item a {
-  color: #007bff;
-  text-decoration: none;
-}
-
-.contact-item a:hover {
-  text-decoration: underline;
-}
-</style>
-```
-
----
-
-## 8. Notifications
-
-### Notification: LoanRequestCreated
-
-```php
-<?php
-
-namespace App\Notifications;
-
-use App\Models\LoanRequest;
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Messages\BroadcastMessage;
-
-class LoanRequestCreated extends Notification
-{
-    use Queueable;
-
-    public function __construct(
-        public LoanRequest $loanRequest
-    ) {}
-
-    public function via(object $notifiable): array
-    {
-        return ['mail', 'database', 'broadcast'];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('Nouvelle demande de prêt')
-            ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line($this->loanRequest->borrower->name . ' souhaite emprunter votre objet : ' . $this->loanRequest->item->name)
-            ->action('Voir la demande', url('/loan-requests/' . $this->loanRequest->id))
-            ->line('Vous pouvez accepter ou refuser cette demande.');
-    }
-
-    public function toArray(object $notifiable): array
-    {
-        return [
-            'loan_request_id' => $this->loanRequest->id,
-            'borrower_name' => $this->loanRequest->borrower->name,
-            'item_name' => $this->loanRequest->item->name,
-            'type' => 'loan_request_created',
-        ];
-    }
-
-    public function toBroadcast(object $notifiable): BroadcastMessage
-    {
-        return new BroadcastMessage([
-            'loan_request_id' => $this->loanRequest->id,
-            'message' => $this->loanRequest->borrower->name . ' veut emprunter ' . $this->loanRequest->item->name,
-        ]);
-    }
-}
-```
-
-### Notification: LoanRequestAccepted
-
-```php
-<?php
-
-namespace App\Notifications;
-
-use App\Models\LoanRequest;
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
-
-class LoanRequestAccepted extends Notification
-{
-    use Queueable;
-
-    public function __construct(
-        public LoanRequest $loanRequest
-    ) {}
-
-    public function via(object $notifiable): array
-    {
-        return ['mail', 'database', 'broadcast'];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('Demande de prêt acceptée !')
-            ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line($this->loanRequest->lender->name . ' a accepté votre demande de prêt pour : ' . $this->loanRequest->item->name)
-            ->line('Vous pouvez maintenant demander ses coordonnées pour organiser le prêt.')
-            ->action('Voir les détails', url('/loan-requests/' . $this->loanRequest->id));
-    }
-
-    public function toArray(object $notifiable): array
-    {
-        return [
-            'loan_request_id' => $this->loanRequest->id,
-            'lender_name' => $this->loanRequest->lender->name,
-            'item_name' => $this->loanRequest->item->name,
-            'type' => 'loan_request_accepted',
-        ];
-    }
-}
-```
-
----
-
-## 9. RGPD et Sécurité
-
-### Controller: UserDataController (Export RGPD)
-
-```php
-<?php
-
-namespace App\Http\Controllers\Api;
-
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-
-class UserDataController extends Controller
-{
-    /**
-     * Exporter toutes les données de l'utilisateur
-     */
-    public function export(Request $request)
-    {
-        $user = $request->user();
-
-        $data = [
-            'user' => [
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'city' => $user->city,
-                'postal_code' => $user->postal_code,
-                'created_at' => $user->created_at,
-            ],
-            'items' => $user->items->map(fn($item) => [
-                'name' => $item->name,
-                'description' => $item->description,
-                'category' => $item->category->name,
-                'created_at' => $item->created_at,
-            ]),
-            'loan_requests_as_borrower' => $user->loanRequestsAsBorrower->map(fn($lr) => [
-                'item' => $lr->item->name,
-                'lender' => $lr->lender->name,
-                'status' => $lr->status,
-                'created_at' => $lr->created_at,
-            ]),
-            'loan_requests_as_lender' => $user->loanRequestsAsLender->map(fn($lr) => [
-                'item' => $lr->item->name,
-                'borrower' => $lr->borrower->name,
-                'status' => $lr->status,
-                'created_at' => $lr->created_at,
-            ]),
-            'messages' => $user->sentMessages->concat($user->receivedMessages)->map(fn($msg) => [
-                'content' => $msg->content,
-                'sender' => $msg->sender->name,
-                'receiver' => $msg->receiver->name,
-                'created_at' => $msg->created_at,
-            ]),
-            'consents' => $user->consents->map(fn($consent) => [
-                'type' => $consent->consent_type,
-                'accepted' => $consent->accepted,
-                'accepted_at' => $consent->accepted_at,
-            ]),
-        ];
-
-        // Générer le fichier JSON
-        $filename = 'user_data_' . $user->id . '_' . now()->format('Y-m-d') . '.json';
-        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+return (
+    <form onSubmit={submit}>
+        <input 
+            value={data.name}
+            onChange={e => setData('name', e.target.value)}
+        />
+        {errors.name && <span>{errors.name}</span>}
         
-        Storage::put('exports/' . $filename, $json);
+        <button disabled={processing}>Créer</button>
+    </form>
+);
+```
 
-        return response()->download(
-            Storage::path('exports/' . $filename),
-            $filename,
-            ['Content-Type' => 'application/json']
-        )->deleteFileAfterSend();
-    }
+---
 
-    /**
-     * Supprimer le compte et toutes les données
-     */
-    public function destroy(Request $request)
+## 8. Services et Helpers
+
+### GeocodingService
+
+```php
+// app/Services/GeocodingService.php
+
+class GeocodingService
+{
+    public function geocode(string $address): ?array
     {
-        $user = $request->user();
-
-        // Vérifier qu'il n'y a pas de prêts en cours
-        $activeLoanRequests = $user->loanRequestsAsLender()
-            ->whereIn('status', ['pending', 'accepted'])
-            ->count();
-
-        if ($activeLoanRequests > 0) {
-            return response()->json([
-                'message' => 'Vous avez des prêts en cours. Veuillez d\'abord les terminer.'
-            ], 422);
-        }
-
-        // Anonymiser au lieu de supprimer (meilleure pratique RGPD)
-        $user->update([
-            'name' => 'Utilisateur supprimé',
-            'email' => 'deleted_' . $user->id . '@example.com',
-            'phone' => null,
-            'city' => null,
-            'postal_code' => null,
-            'latitude' => null,
-            'longitude' => null,
-        ]);
-
-        // Ou suppression complète (cascade configuré dans les migrations)
-        // $user->delete();
-
-        return response()->json([
-            'message' => 'Votre compte a été supprimé avec succès.'
-        ]);
+        // API externe (OpenStreetMap Nominatim, Google Maps, etc.)
+        // Retourne ['latitude' => float, 'longitude' => float]
+    }
+    
+    public function getDistanceBetween(
+        float $lat1, float $lng1,
+        float $lat2, float $lng2
+    ): float {
+        // Formule Haversine pour distance en km
     }
 }
 ```
 
-### Middleware: CheckGeolocationConsent
+### Helpers frontend
 
-```php
-<?php
+```typescript
+// resources/js/lib/utils.ts
 
-namespace App\Http\Middleware;
+export function formatDistance(km: number): string {
+    if (km < 1) return `${Math.round(km * 1000)} m`;
+    return `${km.toFixed(1)} km`;
+}
 
-use Closure;
-use Illuminate\Http\Request;
+export function formatDate(date: string): string {
+    return new Date(date).toLocaleDateString('fr-FR');
+}
 
-class CheckGeolocationConsent
-{
-    public function handle(Request $request, Closure $next)
-    {
-        $user = $request->user();
-
-        // Vérifier que l'utilisateur a accepté le partage de localisation
-        if (!$user->hasConsent('geolocation')) {
-            return response()->json([
-                'message' => 'Vous devez accepter le partage de localisation pour utiliser cette fonctionnalité.'
-            ], 403);
-        }
-
-        return $next($request);
-    }
+export function cn(...classes: (string | undefined)[]): string {
+    return classes.filter(Boolean).join(' ');
 }
 ```
 
 ---
 
-## 10. Tests unitaires
+## 9. Sécurité et RGPD
 
-### Test: LoanRequestTest
+### Système de consentement
+
+1. **Modale au premier login** : `FirstLoginConsentModal.tsx`
+2. **Enregistrement** : API `/api/consent`
+3. **Révocation** : Page settings + `/api/consent/revoke`
+4. **Vérification** : Middleware `CheckGeolocationConsent`
+
+### Partage de coordonnées
+
+Flux pour un prêt accepté :
+1. Emprunteur demande contact → `loan.contact_requested = true`
+2. Prêteur choisit quoi partager (email/phone/adresse)
+3. Prêteur confirme → `loan.contact_shared = true`
+4. Emprunteur accède aux infos via `loan.getSharedContactInfo()`
+
+### Policies
 
 ```php
-<?php
+// app/Policies/ItemPolicy.php
 
-namespace Tests\Feature;
-
-use App\Models\User;
-use App\Models\Item;
-use App\Models\LoanRequest;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-
-class LoanRequestTest extends TestCase
+public function update(User $user, Item $item): bool
 {
-    use RefreshDatabase;
+    return $user->id === $item->user_id;
+}
 
-    public function test_user_can_create_loan_request()
-    {
-        $lender = User::factory()->create();
-        $borrower = User::factory()->create();
-        $item = Item::factory()->create(['user_id' => $lender->id]);
-
-        $response = $this->actingAs($borrower)
-            ->postJson('/api/loan-requests', [
-                'item_id' => $item->id,
-                'start_date' => now()->addDays(1)->toDateString(),
-                'end_date' => now()->addDays(7)->toDateString(),
-            ]);
-
-        $response->assertStatus(201);
-        $this->assertDatabaseHas('loan_requests', [
-            'item_id' => $item->id,
-            'borrower_id' => $borrower->id,
-            'lender_id' => $lender->id,
-            'status' => 'pending',
-        ]);
-    }
-
-    public function test_user_cannot_borrow_own_item()
-    {
-        $user = User::factory()->create();
-        $item = Item::factory()->create(['user_id' => $user->id]);
-
-        $response = $this->actingAs($user)
-            ->postJson('/api/loan-requests', [
-                'item_id' => $item->id,
-            ]);
-
-        $response->assertStatus(422);
-    }
-
-    public function test_lender_can_accept_loan_request()
-    {
-        $loanRequest = LoanRequest::factory()->create(['status' => 'pending']);
-
-        $response = $this->actingAs($loanRequest->lender)
-            ->postJson("/api/loan-requests/{$loanRequest->id}/accept");
-
-        $response->assertStatus(200);
-        $this->assertEquals('accepted', $loanRequest->fresh()->status);
-    }
-
-    public function test_borrower_can_request_contact_after_acceptance()
-    {
-        $loanRequest = LoanRequest::factory()->create(['status' => 'accepted']);
-
-        $response = $this->actingAs($loanRequest->borrower)
-            ->postJson("/api/loan-requests/{$loanRequest->id}/request-contact");
-
-        $response->assertStatus(200);
-        $this->assertTrue($loanRequest->fresh()->contact_requested);
-    }
-
-    public function test_lender_can_share_contact_info()
-    {
-        $loanRequest = LoanRequest::factory()->create([
-            'status' => 'accepted',
-            'contact_requested' => true,
-        ]);
-
-        $response = $this->actingAs($loanRequest->lender)
-            ->postJson("/api/loan-requests/{$loanRequest->id}/share-contact", [
-                'share_email' => true,
-                'share_phone' => true,
-                'share_address' => false,
-            ]);
-
-        $response->assertStatus(200);
-        $loanRequest->refresh();
-        
-        $this->assertTrue($loanRequest->contact_shared);
-        $this->assertTrue($loanRequest->share_email);
-        $this->assertTrue($loanRequest->share_phone);
-        $this->assertFalse($loanRequest->share_address);
-    }
+public function delete(User $user, Item $item): bool
+{
+    // Vérifier qu'il n'y a pas de prêts en cours
+    return $user->id === $item->user_id 
+        && !$item->loans()->whereIn('status', ['pending', 'accepted'])->exists();
 }
 ```
+
+---
+
+## 10. Performance et Optimisations
+
+### Eager loading (N+1 queries)
+
+```php
+// ❌ N+1 problème
+$items = Item::all();
+foreach ($items as $item) {
+    echo $item->owner->name; // 1 requête par item !
+}
+
+// ✅ Solution
+$items = Item::with('owner', 'category')->get();
+```
+
+### Pagination Inertia
+
+```php
+return Inertia::render('Items/Index', [
+    'items' => Item::with('owner')
+        ->latest()
+        ->paginate(12)
+        ->through(fn($item) => [
+            'id' => $item->id,
+            'name' => $item->name,
+            // ... seulement les champs nécessaires
+        ]),
+]);
+```
+
+### Cache des catégories
+
+```php
+$categories = Cache::remember('categories.all', 3600, function () {
+    return Category::with('children')->whereNull('parent_id')->get();
+});
+```
+
+### Images optimisées
+
+- **Intervention Image** pour resize automatique
+- **Lazy loading** avec `loading="lazy"` sur `<img>`
+- **WebP conversion** pour poids réduit
 
 ---
 
 ## Conclusion
 
-Ce guide couvre l'intégralité du système de prêt avec messagerie pour My Loc 2.0 :
+Cette architecture combine :
+- ✅ **SPA moderne** avec Inertia.js (pas de duplication backend/frontend)
+- ✅ **Type safety** avec TypeScript
+- ✅ **Performance** avec eager loading et pagination
+- ✅ **Sécurité** avec Policies et RGPD
+- ✅ **UX fluide** sans rechargement de page
 
-✅ Base de données avec double consentement
-✅ Gestion des permissions granulaires
-✅ Messagerie interne sécurisée
-✅ Partage contrôlé des coordonnées
-✅ Respect de la RGPD
-✅ Tests unitaires
-✅ Composants frontend Vue.js
+**Prochaines évolutions possibles :**
+- WebSockets (Laravel Reverb) pour messagerie temps réel
+- Laravel Scout + Meilisearch pour recherche avancée
+- PWA pour notifications push
+- API REST externe (pour app mobile React Native)
 
-**Prochaines étapes recommandées :**
+---
 
-1. Implémenter Laravel Scout + Meilisearch pour la recherche
-2. Ajouter Laravel Socialite (Google, Facebook)
-3. Configurer Laravel Echo + Pusher pour les notifications temps réel
-4. Déployer avec Laravel Sail ou Docker personnalisé
-5. Mettre en place les sauvegardes automatiques
-6. Configurer un CDN pour les images
-
-Bonne chance avec My Loc 2.0 ! 🚀
+**Dernière mise à jour** : 7 février 2026  
+**Auteur** : Emmanuel Chabrier  
+**Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Web Mobile

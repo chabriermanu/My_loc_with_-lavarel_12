@@ -1,601 +1,403 @@
-# ��� MyLoc 2.0 - Roadmap de développement
+# 🗺️ MyLoc 2.0 - Roadmap de développement
 
 ## ✅ Phase 1 : Base de données et Modèles (TERMINÉ)
 
 ### Ce qui a été fait :
-- ✅ 9 migrations créées et exécutées
-- ✅ 9 modèles Eloquent avec relations complètes
+
+- ✅ 10 migrations créées et exécutées
+- ✅ 10 modèles Eloquent avec relations complètes
 - ✅ Architecture documentée (Architecture.md)
+- ✅ Migration système de consentement RGPD
+- ✅ Migration géolocalisation utilisateurs
 
 ---
 
 ## ✅ Phase 2 : Backend - Controllers (TERMINÉ)
 
-### 8 Controllers complets (43 méthodes) :
+### 9 Controllers complets (50+ méthodes) :
 
 #### CategoryController ✅
+
 - index, create, store, show, edit, update, destroy
 - Routes : `/categories`
 
 #### ItemController ✅
+
 - index (avec pagination), create, store, show, edit, update, destroy
 - Upload photo/vidéo
+- Géolocalisation des items
 - Routes : `/items`
 
 #### LoanController ✅
+
 - index, store, show
 - approve, reject, complete, cancel (méthodes personnalisées)
+- Matching par proximité géographique
 - Routes : `/loans`
 
 #### FavoriteController ✅
+
 - index, toggle
 - Gestion compteur favorites_count
 - Routes : `/favorites`
 
 #### CommentController ✅
+
 - store, update, destroy
-- Système de réponses (parent_id)
+- Système de réponses imbriquées (parent_id)
 - Routes : `/comments`
 
 #### ItemMediaController ✅
+
 - store, destroy
 - Upload médias additionnels
 - Suppression fichiers storage
 - Routes : `/items/{item}/media`
 
 #### ItemReviewController ✅
+
 - store, update, destroy
 - Recalcul moyennes items
 - Routes : `/item-reviews`
 
 #### UserReviewController ✅
+
 - store, update, destroy
 - Système bidirectionnel (as_owner / as_borrower)
 - 4 critères de notation
 - Recalcul moyennes users
 - Routes : `/user-reviews`
 
-### 12 Form Requests avec validation ✅
+#### LocationController ✅ (NOUVEAU)
+
+- update : Mise à jour localisation utilisateur
+- Routes : `/location`
+
+#### Api/ConsentController ✅ (NOUVEAU)
+
+- store : Enregistrement consentement
+- revoke : Révocation consentement
+- Routes : `/api/consent`
+
+### Services Backend ✅
+
+- ✅ **GeocodingService** : Géolocalisation via API externe
+- ✅ **CreateNewUser** : Géolocalisation automatique à l'inscription
+
+### 14 Form Requests avec validation ✅
+
 - StoreCategoryRequest / UpdateCategoryRequest
 - StoreItemRequest / UpdateItemRequest
 - StoreLoanRequest
 - StoreCommentRequest / UpdateCommentRequest
 - StoreItemReviewRequest / UpdateItemReviewRequest
 - StoreUserReviewRequest / UpdateUserReviewRequest
+- (+ validations consentement et localisation)
 
-### 50+ Routes déclarées ✅
+### 60+ Routes déclarées ✅
 
 ---
 
-## ��� Phase 3 : Frontend - Pages React/Inertia (À FAIRE)
+## 🚧 Phase 3 : Frontend - Pages React/Inertia (EN COURS - 75%)
 
-### Priorité 1 : Pages principales (2-3 jours)
+### ✅ Pages principales implémentées
 
 #### 1. Items (Pages publiques et CRUD)
-- [ ] `Items/Index.tsx` - Liste des items (avec pagination, filtres)
-- [ ] `Items/Show.tsx` - Détails item (photos, avis, bouton emprunter)
-- [ ] `Items/Create.tsx` - Formulaire création item
-- [ ] `Items/Edit.tsx` - Formulaire édition item
+
+- ✅ `Items/Index.tsx` - Liste des items (pagination, filtres)
+- ✅ `Items/Show.tsx` - Détails item (photos, avis, commentaires, emprunter)
+- ✅ `Items/Create.tsx` - Formulaire création item
+- ✅ `Items/Edit.tsx` - Formulaire édition item
 
 #### 2. Categories
-- [ ] `Categories/Index.tsx` - Liste catégories (grille avec icônes)
-- [ ] `Categories/Show.tsx` - Items d'une catégorie
-- [ ] `Categories/Create.tsx` - Formulaire admin
-- [ ] `Categories/Edit.tsx` - Formulaire admin
+
+- ✅ `Categories/Index.tsx` - Liste catégories (77 catégories avec icônes)
+- ✅ `Categories/Show.tsx` - Items d'une catégorie
+- ✅ `Categories/Create.tsx` - Formulaire admin
+- ✅ `Categories/Edit.tsx` - Formulaire admin
 
 #### 3. Loans (Gestion prêts)
-- [ ] `Loans/Index.tsx` - Mes prêts (onglets : en tant que propriétaire / emprunteur)
-- [ ] `Loans/Show.tsx` - Détails prêt (avec actions : approuver, refuser, compléter)
+
+- ✅ `Loans/Index.tsx` - Mes prêts (propriétaire/emprunteur)
+- ✅ `Loans/Show.tsx` - Détails prêt avec actions
 
 #### 4. Favorites
-- [ ] `Favorites/Index.tsx` - Mes favoris (grille items)
 
-### Priorité 2 : Composants réutilisables (1 jour)
+- ✅ `Favorites/Index.tsx` - Mes favoris (grille items)
+
+#### 5. Pages légales & Settings
+
+- ✅ `Legal/PrivacyPolicy.tsx` - Politique de confidentialité
+- ✅ `Legal/Terms.tsx` - Conditions générales d'utilisation
+- ✅ `settings/Location.tsx` - Gestion localisation utilisateur
+
+### ✅ Composants réutilisables implémentés
 
 #### Composants Items
-- [ ] `ItemCard.tsx` - Carte item (photo, titre, catégorie, note, favori)
-- [ ] `ItemGallery.tsx` - Galerie photos/vidéos
+
+- ✅ `ItemCard.tsx` - Carte item (photo, titre, catégorie, note, favori)
+- ✅ `ItemMediaCarousel.tsx` - Galerie photos/vidéos avec navigation
 - [ ] `ItemReviewForm.tsx` - Formulaire avis item
 - [ ] `ItemReviewList.tsx` - Liste avis avec pagination
 
+#### Composants RGPD
+
+- ✅ `Consent/FirstLoginConsentModal.tsx` - Modale consentement premier login
+
 #### Composants Prêts
-- [ ] `LoanCard.tsx` - Carte prêt (item, dates, statut, actions)
-- [ ] `LoanStatusBadge.tsx` - Badge coloré selon statut
+
+- ✅ `LoanCard.tsx` - Carte prêt (item, dates, statut, actions)
+- ✅ `LoanStatusBadge.tsx` - Badge coloré selon statut
 - [ ] `UserReviewForm.tsx` - Formulaire avis utilisateur (4 critères)
 
 #### Composants Commentaires
-- [ ] `CommentForm.tsx` - Formulaire commentaire/réponse
+
+- ✅ `CommentForm.tsx` - Formulaire commentaire/réponse
 - [ ] `CommentList.tsx` - Liste commentaires avec réponses
 - [ ] `CommentItem.tsx` - Composant commentaire individuel
 
 #### Composants Génériques
+
 - [ ] `Pagination.tsx` - Composant pagination Inertia
 - [ ] `StarRating.tsx` - Affichage et saisie notes étoiles
 - [ ] `ImageUpload.tsx` - Upload photo avec preview
 - [ ] `VideoUpload.tsx` - Upload vidéo avec preview
 
-### Priorité 3 : Navigation et Layout (1 jour)
+### ✅ Navigation et Layout
 
-- [ ] Navbar avec liens (Items, Catégories, Mes Prêts, Favoris)
-- [ ] Footer
-- [ ] Page d'accueil (Hero + catégories + items populaires)
-- [ ] Breadcrumbs
-- [ ] Messages flash (succès/erreur)
+- ✅ Navbar avec liens (Items, Catégories, Mes Prêts, Favoris)
+- ✅ Footer
+- ✅ Page d'accueil (Hero + catégories + items populaires)
+- ✅ Breadcrumbs
+- ✅ Messages flash (succès/erreur)
 
-### Priorité 4 : Fonctionnalités avancées (2 jours)
+### 🚧 Fonctionnalités avancées (EN COURS)
 
 #### Recherche et Filtres
+
+- ✅ Filtres items (catégorie, type objet/service)
 - [ ] Barre de recherche globale
-- [ ] Filtres items (catégorie, condition, disponibilité)
+- [ ] Filtres condition et disponibilité
 - [ ] Tri (date, popularité, note)
 
+#### Géolocalisation
+
+- ✅ Calcul de distance entre utilisateurs
+- ✅ Affichage distance sur les items
+- ✅ Matching prêts par proximité
+- ✅ Gestion paramètres localisation
+
 #### Profil utilisateur
+
 - [ ] Page profil public (items, avis reçus, note globale)
-- [ ] Page paramètres (édition profil)
+- ✅ Page paramètres localisation
+- [ ] Édition profil complète
 
 #### Notifications
+
 - [ ] Badge compteur notifications
 - [ ] Liste notifications (demandes prêt, approbations, etc.)
 
----
 ---
 
 ## 🔓 Architecture Routes Publiques vs Privées
 
-### Pages PUBLIQUES (accessibles sans connexion)
-- Welcome (page d'accueil)
-- Items/Index (liste des items)
-- Items/Show (détails item)
-- Categories/Index (liste catégories)
-- Categories/Show (items par catégorie)
+### ✅ Pages PUBLIQUES (accessibles sans connexion)
 
-### Pages PRIVÉES (connexion requise)
-- Items/Create, Edit (créer/modifier item)
-- Loans/* (mes prêts)
-- Favorites/* (mes favoris)
-- Dashboard
-- Tous les commentaires, reviews, etc.
+- ✅ Welcome (page d'accueil)
+- ✅ Items/Index (liste des items)
+- ✅ Items/Show (détails item)
+- ✅ Categories/Index (liste catégories)
+- ✅ Categories/Show (items par catégorie)
 
-### ⚠️ TODO : Restructurer routes/web.php
+### ✅ Pages PRIVÉES (connexion requise)
 
-**Actuellement** : Toutes les routes sont dans `middleware(['auth', 'verified'])`
+- ✅ Items/Create, Edit (créer/modifier item)
+- ✅ Loans/\* (mes prêts)
+- ✅ Favorites/\* (mes favoris)
+- ✅ Dashboard
+- ✅ Settings/Location
+- ✅ Categories/Create, Edit (admin)
+- ✅ Tous les commentaires, reviews, etc.
 
-**À faire** : Sortir les routes publiques du middleware
-```php
-// ROUTES PUBLIQUES (sans auth)
-Route::get('items', [ItemController::class, 'index']);
-Route::get('items/{item}', [ItemController::class, 'show']);
-Route::get('categories', [CategoryController::class, 'index']);
-Route::get('categories/{category}', [CategoryController::class, 'show']);
+### ✅ Masquage données sensibles (IMPLÉMENTÉ)
 
-// ROUTES PRIVÉES (avec auth)
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Toutes les autres routes...
-});
-```
-
-### 🎭 Masquage données sensibles
-
-**Dans les controllers publics (index, show) :**
-- Conditionner `->with('owner')` selon `Auth::check()`
-- Passer `isAuthenticated` au frontend
-- Frontend affiche/masque infos selon cette prop
-
-**Exemple ItemController@index :**
-```php
-$items = Item::with(['category'])
-    ->when(Auth::check(), fn($q) => $q->with('owner'))
-    ->latest()
-    ->paginate(12);
-
-return Inertia::render('Items/Index', [
-    'items' => $items,
-    'isAuthenticated' => Auth::check(),
-]);
-```
-
----
-## ��� Plan d'action pour demain (AFPA)
-
-### Matin (2h30)
-
-1. **Créer les fichiers .tsx minimaux** (30min)
-```bash
-   # Créer la structure de dossiers
-   mkdir -p resources/js/Pages/{Items,Categories,Loans,Favorites}
-```
-   
-   Pour chaque page, créer un fichier minimal :
-```tsx
-   export default function Index({ data }) {
-       return <div>Page en construction</div>;
-   }
-```
-
-2. **Commencer par Items/Index.tsx** (2h)
-   - Afficher la liste des items en grille
-   - Pagination avec Inertia
-   - Composant ItemCard basique
-
-### Après-midi (3h)
-
-3. **Items/Show.tsx** (2h)
-   - Affichage détails item
-   - Galerie photos
-   - Bouton Favoris (toggle)
-   - Bouton "Emprunter"
-
-4. **ItemCard.tsx** composant réutilisable (1h)
-   - Photo, titre, catégorie
-   - Note étoiles
-   - Icône favori
-   - Badge disponibilité
+- ✅ Coordonnées géographiques masquées pour non-connectés
+- ✅ Contact utilisateur conditionné à l'authentification
+- ✅ Système de consentement RGPD pour partage données
 
 ---
 
-## ��� Design et UI
+## 🎯 Prochaines étapes prioritaires
 
-### Stack technique frontend :
-- React + TypeScript
-- Inertia.js (déjà configuré avec Breeze)
-- Tailwind CSS (déjà installé)
-- Lucide React (icônes)
+### Semaine en cours (Frontend)
 
-### Palette de couleurs (à définir) :
-- Primaire : #3B82F6 (bleu)
-- Secondaire : #10B981 (vert)
-- Erreur : #EF4444 (rouge)
-- Warning : #F59E0B (orange)
+1. **Composants Commentaires restants** (1 jour)
+    - ✅ CommentForm avec réponses imbriquées
+    - [ ] CommentList avec affichage hiérarchique
+    - [ ] CommentItem (édition/suppression)
 
----
+2. **Système d'avis** (1 jour)
+    - [ ] ItemReviewForm avec notes
+    - [ ] UserReviewForm (4 critères)
+    - [ ] Affichage moyennes et statistiques
 
-## ��� Phase 4 : Seeders et données de test (1 jour)
+3. **Composants génériques** (1 jour)
+    - [ ] StarRating (notes étoiles)
+    - [ ] Pagination Inertia
+    - [ ] ImageUpload avec preview
 
-- [ ] CategorySeeder (10 catégories avec icônes)
-- [ ] UserSeeder (5 utilisateurs de test)
-- [ ] ItemSeeder (30 items répartis dans les catégories)
-- [ ] LoanSeeder (quelques prêts de test)
-- [ ] ReviewSeeder (avis items et users)
+### Semaine suivante (Seeders et Tests)
 
----
+4. **Phase 4 : Seeders et données de test**
+    - [ ] CategorySeeder (77 catégories avec icônes)
+    - [ ] UserSeeder (10 utilisateurs de test avec géolocalisation)
+    - [ ] ItemSeeder (50 items répartis)
+    - [ ] LoanSeeder (prêts de test avec statuts variés)
+    - [ ] ReviewSeeder (avis items et users)
+    - [ ] ConsentSeeder (consentements RGPD)
 
-## ��� Phase 5 : Tests et optimisations (2 jours)
+5. **Phase 5 : Tests et optimisations**
+    - [ ] Tests flux utilisateur complets
+    - [ ] Responsive design (mobile, tablette)
+    - [ ] Optimisation images (lazy loading)
+    - [ ] Validation formulaires côté client
+    - [ ] Tests géolocalisation
 
-- [ ] Tester tous les flux utilisateur
-- [ ] Responsive design (mobile, tablette)
-- [ ] Optimisation images (lazy loading)
-- [ ] Validation formulaires côté client
-- [ ] Messages d'erreur clairs
+### Dernière semaine (Sécurité et Polish)
 
----
-
-## ��� Phase 6 : Sécurité et permissions (1 jour)
-
-- [ ] Middleware admin pour CategoryController
-- [ ] Policy pour vérifier propriété items/comments/reviews
-- [ ] Protection CSRF (déjà géré par Inertia)
-- [ ] Validation fichiers uploadés (taille, type)
-
----
-
-## ��� Progression globale
-```
-Phase 1 : Base de données       ████████████████████ 100% ✅
-Phase 2 : Backend               ███████████████████  90% ✅
-Phase 3 : Frontend              ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 4 : Seeders               ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 5 : Tests                 ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 6 : Sécurité              ░░░░░░░░░░░░░░░░░░░░   0%
-```
-
-**Projet global : 33% complété**
+6. **Phase 6 : Sécurité et permissions**
+    - [ ] Policies pour items/comments/reviews
+    - [ ] Middleware admin pour categories
+    - [ ] Validation fichiers uploadés renforcée
+    - [ ] Tests sécurité RGPD
 
 ---
 
-## ��� Conseils pour le développement frontend
+## 📊 Progression globale
 
-1. **Commence par les pages simples** (Index) avant les complexes (Show avec toutes les features)
-2. **Teste régulièrement** avec `npm run dev` et `php artisan serve`
-3. **Utilise les composants Breeze existants** comme base (Button, Input, etc.)
-4. **Console du navigateur** pour débugger les erreurs React
-5. **Inertia DevTools** (extension Chrome) pour voir les props passées aux pages
-
----
-
-## ��� Ressources utiles
-
-- Documentation Inertia.js : https://inertiajs.com/
-- Tailwind CSS : https://tailwindcss.com/
-- Lucide Icons : https://lucide.dev/
-- Laravel Docs : https://laravel.com/docs
-
----
-
-## ✨ Features bonus (si le temps le permet)
-
-- [ ] Mode sombre
-- [ ] Système de messagerie entre users
-- [ ] Notifications temps réel (Pusher/Echo)
-- [ ] Historique modifications profil
-- [ ] Export PDF des prêts
-- [ ] Carte interactive (localisation items)
-- [ ] Multi-langues (FR/EN)
-
----
-
-**Dernière mise à jour** : 26 janvier 2026  
-**Développeur** : Emmanuel  
-**Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Mobile# ��� MyLoc 2.0 - Roadmap de développement
-
-## ✅ Phase 1 : Base de données et Modèles (TERMINÉ)
-
-### Ce qui a été fait :
-- ✅ 9 migrations créées et exécutées
-- ✅ 9 modèles Eloquent avec relations complètes
-- ✅ Architecture documentée (Architecture.md)
-
----
-
-## ✅ Phase 2 : Backend - Controllers (TERMINÉ)
-
-### 8 Controllers complets (43 méthodes) :
-
-#### CategoryController ✅
-- index, create, store, show, edit, update, destroy
-- Routes : `/categories`
-
-#### ItemController ✅
-- index (avec pagination), create, store, show, edit, update, destroy
-- Upload photo/vidéo
-- Routes : `/items`
-
-#### LoanController ✅
-- index, store, show
-- approve, reject, complete, cancel (méthodes personnalisées)
-- Routes : `/loans`
-
-#### FavoriteController ✅
-- index, toggle
-- Gestion compteur favorites_count
-- Routes : `/favorites`
-
-#### CommentController ✅
-- store, update, destroy
-- Système de réponses (parent_id)
-- Routes : `/comments`
-
-#### ItemMediaController ✅
-- store, destroy
-- Upload médias additionnels
-- Suppression fichiers storage
-- Routes : `/items/{item}/media`
-
-#### ItemReviewController ✅
-- store, update, destroy
-- Recalcul moyennes items
-- Routes : `/item-reviews`
-
-#### UserReviewController ✅
-- store, update, destroy
-- Système bidirectionnel (as_owner / as_borrower)
-- 4 critères de notation
-- Recalcul moyennes users
-- Routes : `/user-reviews`
-
-### 12 Form Requests avec validation ✅
-- StoreCategoryRequest / UpdateCategoryRequest
-- StoreItemRequest / UpdateItemRequest
-- StoreLoanRequest
-- StoreCommentRequest / UpdateCommentRequest
-- StoreItemReviewRequest / UpdateItemReviewRequest
-- StoreUserReviewRequest / UpdateUserReviewRequest
-
-### 50+ Routes déclarées ✅
-
----
-
-## ��� Phase 3 : Frontend - Pages React/Inertia (À FAIRE)
-
-### Priorité 1 : Pages principales (2-3 jours)
-
-#### 1. Items (Pages publiques et CRUD)
-- [ ] `Items/Index.tsx` - Liste des items (avec pagination, filtres)
-- [ ] `Items/Show.tsx` - Détails item (photos, avis, bouton emprunter)
-- [ ] `Items/Create.tsx` - Formulaire création item
-- [ ] `Items/Edit.tsx` - Formulaire édition item
-
-#### 2. Categories
-- [ ] `Categories/Index.tsx` - Liste catégories (grille avec icônes)
-- [ ] `Categories/Show.tsx` - Items d'une catégorie
-- [ ] `Categories/Create.tsx` - Formulaire admin
-- [ ] `Categories/Edit.tsx` - Formulaire admin
-
-#### 3. Loans (Gestion prêts)
-- [ ] `Loans/Index.tsx` - Mes prêts (onglets : en tant que propriétaire / emprunteur)
-- [ ] `Loans/Show.tsx` - Détails prêt (avec actions : approuver, refuser, compléter)
-
-#### 4. Favorites
-- [ ] `Favorites/Index.tsx` - Mes favoris (grille items)
-
-### Priorité 2 : Composants réutilisables (1 jour)
-
-#### Composants Items
-- [ ] `ItemCard.tsx` - Carte item (photo, titre, catégorie, note, favori)
-- [ ] `ItemGallery.tsx` - Galerie photos/vidéos
-- [ ] `ItemReviewForm.tsx` - Formulaire avis item
-- [ ] `ItemReviewList.tsx` - Liste avis avec pagination
-
-#### Composants Prêts
-- [ ] `LoanCard.tsx` - Carte prêt (item, dates, statut, actions)
-- [ ] `LoanStatusBadge.tsx` - Badge coloré selon statut
-- [ ] `UserReviewForm.tsx` - Formulaire avis utilisateur (4 critères)
-
-#### Composants Commentaires
-- [ ] `CommentForm.tsx` - Formulaire commentaire/réponse
-- [ ] `CommentList.tsx` - Liste commentaires avec réponses
-- [ ] `CommentItem.tsx` - Composant commentaire individuel
-
-#### Composants Génériques
-- [ ] `Pagination.tsx` - Composant pagination Inertia
-- [ ] `StarRating.tsx` - Affichage et saisie notes étoiles
-- [ ] `ImageUpload.tsx` - Upload photo avec preview
-- [ ] `VideoUpload.tsx` - Upload vidéo avec preview
-
-### Priorité 3 : Navigation et Layout (1 jour)
-
-- [ ] Navbar avec liens (Items, Catégories, Mes Prêts, Favoris)
-- [ ] Footer
-- [ ] Page d'accueil (Hero + catégories + items populaires)
-- [ ] Breadcrumbs
-- [ ] Messages flash (succès/erreur)
-
-### Priorité 4 : Fonctionnalités avancées (2 jours)
-
-#### Recherche et Filtres
-- [ ] Barre de recherche globale
-- [ ] Filtres items (catégorie, condition, disponibilité)
-- [ ] Tri (date, popularité, note)
-
-#### Profil utilisateur
-- [ ] Page profil public (items, avis reçus, note globale)
-- [ ] Page paramètres (édition profil)
-
-#### Notifications
-- [ ] Badge compteur notifications
-- [ ] Liste notifications (demandes prêt, approbations, etc.)
-
----
-
-## ��� Plan d'action pour demain (AFPA)
-
-### Matin (2h30)
-
-1. **Créer les fichiers .tsx minimaux** (30min)
-```bash
-   # Créer la structure de dossiers
-   mkdir -p resources/js/Pages/{Items,Categories,Loans,Favorites}
-```
-   
-   Pour chaque page, créer un fichier minimal :
-```tsx
-   export default function Index({ data }) {
-       return <div>Page en construction</div>;
-   }
-```
-
-2. **Commencer par Items/Index.tsx** (2h)
-   - Afficher la liste des items en grille
-   - Pagination avec Inertia
-   - Composant ItemCard basique
-
-### Après-midi (3h)
-
-3. **Items/Show.tsx** (2h)
-   - Affichage détails item
-   - Galerie photos
-   - Bouton Favoris (toggle)
-   - Bouton "Emprunter"
-
-4. **ItemCard.tsx** composant réutilisable (1h)
-   - Photo, titre, catégorie
-   - Note étoiles
-   - Icône favori
-   - Badge disponibilité
-
----
-
-## ��� Design et UI
-
-### Stack technique frontend :
-- React + TypeScript
-- Inertia.js (déjà configuré avec Breeze)
-- Tailwind CSS (déjà installé)
-- Lucide React (icônes)
-
-### Palette de couleurs (à définir) :
-- Primaire : #3B82F6 (bleu)
-- Secondaire : #10B981 (vert)
-- Erreur : #EF4444 (rouge)
-- Warning : #F59E0B (orange)
-
----
-
-## ��� Phase 4 : Seeders et données de test (1 jour)
-
-- [ ] CategorySeeder (10 catégories avec icônes)
-- [ ] UserSeeder (5 utilisateurs de test)
-- [ ] ItemSeeder (30 items répartis dans les catégories)
-- [ ] LoanSeeder (quelques prêts de test)
-- [ ] ReviewSeeder (avis items et users)
-
----
-
-## ��� Phase 5 : Tests et optimisations (2 jours)
-
-- [ ] Tester tous les flux utilisateur
-- [ ] Responsive design (mobile, tablette)
-- [ ] Optimisation images (lazy loading)
-- [ ] Validation formulaires côté client
-- [ ] Messages d'erreur clairs
-
----
-
-## ��� Phase 6 : Sécurité et permissions (1 jour)
-
-- [ ] Middleware admin pour CategoryController
-- [ ] Policy pour vérifier propriété items/comments/reviews
-- [ ] Protection CSRF (déjà géré par Inertia)
-- [ ] Validation fichiers uploadés (taille, type)
-
----
-
-## ��� Progression globale
 ```
 Phase 1 : Base de données       ████████████████████ 100% ✅
 Phase 2 : Backend               ████████████████████ 100% ✅
-Phase 3 : Frontend              ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 3 : Frontend              ███████████████░░░░░  75% 🚧
 Phase 4 : Seeders               ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5 : Tests                 ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 6 : Sécurité              ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 6 : Sécurité              ████░░░░░░░░░░░░░░░░  20% 🚧
 ```
 
-**Projet global : 33% complété**
+**Projet global : 72% complété**
 
 ---
 
-## ��� Conseils pour le développement frontend
+## 🎨 Design et UI
 
-1. **Commence par les pages simples** (Index) avant les complexes (Show avec toutes les features)
-2. **Teste régulièrement** avec `npm run dev` et `php artisan serve`
-3. **Utilise les composants Breeze existants** comme base (Button, Input, etc.)
-4. **Console du navigateur** pour débugger les erreurs React
-5. **Inertia DevTools** (extension Chrome) pour voir les props passées aux pages
+### Stack technique frontend :
+
+- ✅ React 18 + TypeScript
+- ✅ Inertia.js (configuré avec Breeze)
+- ✅ Tailwind CSS
+- ✅ shadcn/ui (composants)
+- ✅ Lucide React (icônes)
+
+### Palette de couleurs :
+
+- Primaire : #3B82F6 (bleu)
+- Secondaire : #10B981 (vert)
+- Erreur : #EF4444 (rouge)
+- Warning : #F59E0B (orange)
+- Neutre : Tailwind gray scale
 
 ---
 
-## ��� Ressources utiles
+## 📦 Fonctionnalités implémentées
+
+### ✅ Système complet
+
+- [x] Authentification (Laravel Fortify)
+- [x] CRUD complet des annonces (objets + services)
+- [x] CRUD admin des catégories
+- [x] Upload et gestion d'images multiples
+- [x] Système de catégories (77 catégories)
+- [x] Système de likes/favoris avec compteurs
+- [x] Commentaires avec réponses imbriquées
+- [x] Système de prêts/emprunts complet
+- [x] Composants LoanCard et badges de statut
+- [x] Géolocalisation utilisateurs
+- [x] Calcul de distance et matching
+- [x] Système de consentement RGPD
+- [x] Pages légales (CGU, Confidentialité)
+- [x] Gestion paramètres localisation
+- [x] Breadcrumbs navigation
+- [x] Formulaire de commentaires
+
+### 🚧 En cours de développement
+
+- [ ] Système de notation items/utilisateurs
+- [ ] Liste et affichage commentaires
+- [ ] Profil utilisateur public complet
+- [ ] Recherche globale avancée
+- [ ] Notifications en temps réel
+
+### 💡 Features bonus (backlog)
+
+- [ ] Mode sombre
+- [ ] Messagerie privée entre utilisateurs
+- [ ] Export PDF des prêts
+- [ ] Carte interactive (localisation items)
+- [ ] Multi-langues (FR/EN)
+- [ ] PWA (Progressive Web App)
+- [ ] Application mobile (React Native)
+
+---
+
+## 🛠️ Stack technique complète
+
+### Backend
+
+- Laravel 12
+- MySQL
+- Laravel Fortify (Auth)
+- API Géocodage externe
+
+### Frontend
+
+- React 18
+- TypeScript
+- Inertia.js
+- Tailwind CSS
+- shadcn/ui
+- Lucide React
+
+### DevOps
+
+- Vite
+- Docker (docker-compose.yaml)
+- Git
+
+---
+
+## 📝 Conseils pour la suite
+
+1. **Priorité frontend** : Finir CommentList et CommentItem
+2. **Système d'avis** : Implémenter StarRating et formulaires reviews
+3. **Seeders** : Créer données de test réalistes pour demo
+4. **Tests utilisateur** : Faire tester l'app par quelqu'un d'autre
+5. **Documentation** : Tenir à jour README.md et Architecture.md
+6. **Performance** : Optimiser les requêtes N+1, lazy loading images
+
+---
+
+## 📚 Ressources utiles
 
 - Documentation Inertia.js : https://inertiajs.com/
 - Tailwind CSS : https://tailwindcss.com/
+- shadcn/ui : https://ui.shadcn.com/
 - Lucide Icons : https://lucide.dev/
 - Laravel Docs : https://laravel.com/docs
 
 ---
 
-## ✨ Features bonus (si le temps le permet)
-
-- [ ] Mode sombre
-- [ ] Système de messagerie entre users
-- [ ] Notifications temps réel (Pusher/Echo)
-- [ ] Historique modifications profil
-- [ ] Export PDF des prêts
-- [ ] Carte interactive (localisation items)
-- [ ] Multi-langues (FR/EN)
-
----
-
-**Dernière mise à jour** : 26 janvier 2026  
-**Développeur** : Emmanuel  
-**Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Mobile
-
-
+**Dernière mise à jour** : 7 février 2026  
+**Développeur** : Emmanuel Chabrier  
+**Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Web Mobile  
+**ECF** : MyLoc 2.0 - Plateforme de partage d'objets et services
