@@ -36,6 +36,8 @@ class User extends Authenticatable
         'postal_code',
         'city',
         'street_address',
+        'latitude',
+        'longitude',
     ];
 
     /**
@@ -127,7 +129,33 @@ class User extends Authenticatable
         return $this->consents()
             ->where('consent_type', $type)
             ->where('accepted', true)
+            ->whereNull('revoked_at')
             ->exists();
+    }
+    // Méthode pour donner un consentement
+    public function giveConsent(string $type, ?string $ipAddress = null, ?string $userAgent = null): UserConsent
+    {
+        return $this->consents()->updateOrCreate(
+            [
+                'user_id' => $this->id,
+                'consent_type' => $type,
+            ],
+            [
+                'accepted' => true,
+                'accepted_at' => now(),
+                'revoked_at' => null,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+            ]
+        );
+    }
+
+    // Méthode pour révoquer un consentement
+    public function revokeConsent(string $type): bool
+    {
+        return $this->consents()
+            ->where('consent_type', $type)
+            ->update(['revoked_at' => now(), 'accepted' => false]);
     }
 
     // Accesseurs pour la localisation publique

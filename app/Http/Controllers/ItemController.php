@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateItemRequest;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -17,15 +18,54 @@ class ItemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::with(['owner', 'category'])
-            ->withCount(['likes', 'comments']) // ← Ajoute seulement likes et comments
-            ->latest()
-            ->paginate(12);
+        $user = Auth::user();
+
+        $query = Item::with(['category', 'owner'])
+            ->withCount(['likes', 'favorites', 'comments'])
+            ->where('is_available', true);
+
+        // ✅ SI L'UTILISATEUR A UNE LOCALISATION, CALCUL DES DISTANCES
+        if ($user && $user->latitude && $user->longitude) {
+            $userLat = $user->latitude;
+            $userLng = $user->longitude;
+
+            $query->join('users', 'items.user_id', '=', 'users.id')
+                ->select('items.*')
+                ->selectRaw(
+                    'ROUND(6371 * acos(
+                        cos(radians(?)) * cos(radians(users.latitude)) * 
+                        cos(radians(users.longitude) - radians(?)) + 
+                        sin(radians(?)) * sin(radians(users.latitude))
+                    )) AS distance',
+                    [$userLat, $userLng, $userLat]
+                )
+                ->orderBy('distance', 'asc'); // Tri par distance croissante
+        } else {
+            // Tri par défaut : les plus récents
+            $query->latest();
+        }
+
+        $items = $query->paginate(12);
+
+        // ✅ Ajouter is_liked et is_favorited pour chaque item
+        if (Auth::check()) {
+            $items->getCollection()->transform(function ($item) {
+                $item->is_liked = $item->likes()
+                    ->where('user_id', Auth::id())
+                    ->exists();
+
+                $item->is_favorited = $item->favorites()
+                    ->where('user_id', Auth::id())
+                    ->exists();
+
+                return $item;
+            });
+        }
 
         return Inertia::render('Items/Index', [
-            'items' => $items
+            'items' => $items,
         ]);
     }
 
@@ -79,7 +119,7 @@ class ItemController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
-            'type' => $request->type, // ← AJOUTER
+            'type' => $request->type,
             'picture' => $picturePath,
             'video' => $videoPath,
             'media_type' => $request->media_type,
@@ -183,7 +223,7 @@ class ItemController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
-            'type' => $request->type, // ← AJOUTER
+            'type' => $request->type,
             'picture' => $picturePath,
             'video' => $videoPath,
             'media_type' => $request->media_type,

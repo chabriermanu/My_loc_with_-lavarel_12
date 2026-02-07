@@ -23,25 +23,7 @@ class LoanController extends Controller
     //-----------------------------------------
     // 1) ROUTES REST PRINCIPALES
     //--------------------------------------------
-    public function index()
-    {
-        // Prêts où je suis propriétaire (j'ai prêté mes objets)
-        $myLoansAsOwner = Loan::with(['item.owner', 'borrower', 'messages'])
-            ->where('owner_id', Auth::id())
-            ->latest()
-            ->paginate(10);
-
-        // Prêts où je suis emprunteur (j'ai emprunté)
-        $myLoansAsBorrower = Loan::with(['item.owner', 'owner', 'messages'])
-            ->where('borrower_id', Auth::id())
-            ->latest()
-            ->paginate(10);
-
-        return Inertia::render('Loans/Index', [
-            'myLoansAsOwner' => $myLoansAsOwner,
-            'myLoansAsBorrower' => $myLoansAsBorrower,
-        ]);
-    }
+   
 
     public function create(Request $request)
     {

@@ -32,28 +32,37 @@ export interface Item {
     name: string;
     slug: string;
     description: string;
-    picture?: string;
-    video?: string;
-    type: 'object' | 'service';
-    media_type: 'image' | 'video' | 'both';
+    picture: string | null;
+    video: string | null;
+    media_type: string | null;
     user_id: number;
     category_id: number;
-    condition: 'new' | 'like_new' | 'good' | 'fair' | 'poor';
-    value?: number;
+    condition: string | null;
+    value: number | null;
     is_available: boolean;
-    rating?: number;
-    total_ratings?: number;
+    rating: number | null;
+    total_ratings: number;
     views_count: number;
-    favorites_count: number;
-    category: Category;
-    owner: User;
+    type: 'object' | 'service';
     created_at: string;
+    updated_at: string;
+
+    // Relations
+    owner: User;
+    category: Category;
+    comments?: Comment[];
+
+    // Compteurs
     likes_count: number;
+    favorites_count: number;
     comments_count: number;
+
+    // États utilisateur
     is_liked: boolean;
     is_favorited: boolean;
-    comments?: ItemComment[]; // ← Mise à jour ici
-    reviews?: ItemReview[];
+
+    // ✅ AJOUTER CETTE LIGNE
+    distance?: number; // Distance en km (calculée dynamiquement)
 }
 
 export interface Loan {
@@ -88,7 +97,6 @@ export interface Loan {
     owner: User;
     borrower: User;
     messages: Message[];
-    
 }
 
 export interface Message {

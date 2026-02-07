@@ -17,7 +17,7 @@ export default function ItemMediaCarousel({ medias }: { medias: Media[] }) {
     const [api, setApi] = useState<CarouselApi>();
     const [index, setIndex] = useState(0);
 
-    // 🔥 Quand l’API Embla est prête, on écoute les changements de slide
+    // 🔥 Quand l'API Embla est prête, on écoute les changements de slide
     useEffect(() => {
         if (!api) return;
 
@@ -34,22 +34,23 @@ export default function ItemMediaCarousel({ medias }: { medias: Media[] }) {
     }, [api]);
 
     return (
-        <div className="relative">
+        <div className="relative w-full">
             <Carousel className="w-full" setApi={setApi}>
                 <CarouselContent>
                     {medias.map((media, i) => (
                         <CarouselItem key={i}>
-                            <div className="relative aspect-square w-full overflow-hidden rounded-md bg-black">
+                            <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
                                 {media.type === 'image' ? (
                                     <img
                                         src={media.src}
-                                        className="h-full w-full object-cover"
+                                        alt={`Media ${i + 1}`}
+                                        className="h-full w-full object-contain"
                                     />
                                 ) : (
                                     <video
                                         src={media.src}
                                         controls
-                                        className="h-full w-full object-cover"
+                                        className="h-full w-full object-contain"
                                     />
                                 )}
                             </div>
@@ -59,20 +60,20 @@ export default function ItemMediaCarousel({ medias }: { medias: Media[] }) {
 
                 {medias.length > 1 && (
                     <>
-                        <CarouselPrevious />
-                        <CarouselNext />
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
                     </>
                 )}
             </Carousel>
 
             {/* Dots */}
             {medias.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 space-x-2">
+                <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 space-x-2">
                     {medias.map((_, i) => (
                         <div
                             key={i}
-                            className={`h-2 w-2 rounded-full transition ${
-                                i === index ? 'bg-blue-700' : 'bg-red-600'
+                            className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                                i === index ? 'w-4 bg-blue-600' : 'bg-gray-400'
                             }`}
                         />
                     ))}

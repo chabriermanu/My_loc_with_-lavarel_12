@@ -32,7 +32,6 @@ class Item extends Model
         'rating',
         'total_ratings',
         'views_count',
-        'favorites_count',
         'type',
     ];
 
@@ -42,13 +41,14 @@ class Item extends Model
         'is_available' => 'boolean',
         'total_ratings' => 'integer',
         'views_count' => 'integer',
-        'favorites_count' => 'integer',
     ];
 
+    // ✅ Ajouter automatiquement is_liked et is_favorited à chaque item
     protected $appends = ['is_liked', 'is_favorited'];
 
-    // ⚠️ SUPPRIME COMPLÈTEMENT CETTE LIGNE
-    // protected $withCount = ['likes', 'comments'];
+    // ============================================================
+    // RELATIONS
+    // ============================================================
 
     public function owner(): BelongsTo
     {
@@ -90,6 +90,13 @@ class Item extends Model
         return $this->hasMany(Comment::class);
     }
 
+    // ============================================================
+    // ACCESSEURS (ATTRIBUTS CALCULÉS)
+    // ============================================================
+
+    /**
+     * Vérifier si l'utilisateur connecté a liké cet item
+     */
     public function getIsLikedAttribute(): bool
     {
         if (!Auth::check()) {
@@ -99,6 +106,9 @@ class Item extends Model
         return $this->likes()->where('user_id', Auth::id())->exists();
     }
 
+    /**
+     * Vérifier si l'utilisateur connecté a mis cet item en favori
+     */
     public function getIsFavoritedAttribute(): bool
     {
         if (!Auth::check()) {
@@ -108,13 +118,40 @@ class Item extends Model
         return $this->favorites()->where('user_id', Auth::id())->exists();
     }
 
+    // ============================================================
+    // SCOPES (FILTRES)
+    // ============================================================
+
+    /**
+     * Filtrer uniquement les objets
+     */
     public function scopeObjects($query)
     {
         return $query->where('type', 'object');
     }
 
+    /**
+     * Filtrer uniquement les services
+     */
     public function scopeServices($query)
     {
         return $query->where('type', 'service');
+    }
+
+    /**
+     * Filtrer les items disponibles
+     */
+    public function scopeAvailable($query)
+    {
+        return $query->where('is_available', true);
+    }
+
+    /**
+     * Trier par popularité (nombre de favoris)
+     */
+    public function scopePopular($query)
+    {
+        return $query->withCount('favorites')
+            ->orderBy('favorites_count', 'desc');
     }
 }

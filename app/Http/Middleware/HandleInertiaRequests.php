@@ -34,16 +34,24 @@ class HandleInertiaRequests extends Middleware
      * @return array<string, mixed>
      */
     public function share(Request $request): array
-{
-    return [
-        ...parent::share($request),
-        'auth' => [
-            'user' => $request->user(),
-        ],
-        'flash' => [
-            'success' => fn () => $request->session()->get('success'),
-            'error' => fn () => $request->session()->get('error'),
-        ],
-    ];
-}
+    {
+        return [
+            ...parent::share($request),
+            'auth' => [
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'avatar' => $request->user()->avatar,
+                    // ✅ Vérifier si les consentements obligatoires sont donnés
+                    'has_given_consents' => $request->user()
+                        ? $request->user()->hasConsent('terms')
+                        && $request->user()->hasConsent('privacy_policy')
+                        && $request->user()->hasConsent('data_processing')
+                        && $request->user()->hasConsent('geolocation')
+                        : false,
+                ] : null,
+            ],
+        ];
+    }
 }

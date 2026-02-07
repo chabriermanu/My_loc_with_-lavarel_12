@@ -3,9 +3,9 @@ import { dashboard, login, register } from '@/routes';
 import type { SharedData } from '@/types';
 import type { Category, Item } from '@/types/model';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { route } from 'ziggy-js';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef } from 'react';
+import { route } from 'ziggy-js';
 
 interface WelcomeProps {
     canRegister?: boolean;
@@ -38,7 +38,9 @@ export default function Welcome({
             <Head title="Bienvenue" />
 
             <div className="min-h-screen bg-gray-50">
-                {/* SECTION HERO */}
+                {/* ============================================================ */}
+                {/* SECTION HERO                                                 */}
+                {/* ============================================================ */}
                 <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
                     <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
                         <div className="text-center">
@@ -83,12 +85,14 @@ export default function Welcome({
                     </div>
                 </div>
 
-                {/* SECTION ITEMS LES MIEUX NOTÉS - SCROLL HORIZONTAL */}
+                {/* ============================================================ */}
+                {/* SECTION ITEMS LES PLUS FAVORIS - SCROLL HORIZONTAL           */}
+                {/* ============================================================ */}
                 <div className="bg-white py-16">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-8 flex items-center justify-between">
                             <h2 className="text-3xl font-bold text-gray-900">
-                                ⭐ Items les mieux notés
+                                ⭐ Items les plus favoris
                             </h2>
                             {topRatedItems.length > 0 && (
                                 <div className="flex gap-2">
@@ -110,7 +114,6 @@ export default function Welcome({
                             )}
                         </div>
 
-                        {/* CONTENU OU MESSAGE VIDE */}
                         {topRatedItems.length > 0 ? (
                             <div
                                 ref={scrollContainerRef}
@@ -135,15 +138,17 @@ export default function Welcome({
                         ) : (
                             <div className="py-12 text-center">
                                 <p className="text-lg text-gray-500">
-                                    Aucun item noté pour le moment. Soyez le
-                                    premier à noter un item ! 🌟
+                                    Aucun item en favori pour le moment. Soyez
+                                    le premier à ajouter un item en favori ! ⭐
                                 </p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* SECTION CATÉGORIES LES PLUS VUES */}
+                {/* ============================================================ */}
+                {/* SECTION CATÉGORIES POPULAIRES                                */}
+                {/* ============================================================ */}
                 <div className="bg-gray-50 py-16">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-8 flex items-center justify-between">
@@ -160,28 +165,30 @@ export default function Welcome({
                             )}
                         </div>
 
-                        {/* CONTENU OU MESSAGE VIDE */}
                         {popularCategories.length > 0 ? (
                             <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
                                 {popularCategories
-                                    .filter(category => category.id) // ✅ Filtrer les catégories sans ID
+                                    .filter((category) => category.id)
                                     .map((category) => (
                                         <Link
                                             key={category.id}
-                                            href={route('categories.show', category.id)} // ✅ Utilisez route() avec l'ID
+                                            href={route(
+                                                'categories.show',
+                                                category.id,
+                                            )}
                                             className="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl"
                                         >
-                                            {/* Badge du nombre d'items */}
+                                            {/* Badge nombre d'items */}
                                             <div className="absolute top-4 right-4 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
                                                 {category.items_count || 0}
                                             </div>
 
-                                            {/* Icône ou emoji */}
+                                            {/* Icône */}
                                             <div className="mb-4 text-4xl">
                                                 {category.icon || '📦'}
                                             </div>
 
-                                            {/* Nom de la catégorie */}
+                                            {/* Nom */}
                                             <h3 className="text-lg font-bold text-gray-900 transition group-hover:text-blue-600">
                                                 {category.name}
                                             </h3>
@@ -193,8 +200,7 @@ export default function Welcome({
                                                 </p>
                                             )}
                                         </Link>
-                                    ))
-                                }
+                                    ))}
                             </div>
                         ) : (
                             <div className="py-12 text-center">
@@ -207,7 +213,9 @@ export default function Welcome({
                     </div>
                 </div>
 
-                {/* SECTION ITEMS RÉCENTS */}
+                {/* ============================================================ */}
+                {/* SECTION NOUVEAUTÉS (ITEMS RÉCENTS)                           */}
+                {/* ============================================================ */}
                 <div className="bg-white py-16">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mb-8 flex items-center justify-between">
@@ -224,7 +232,6 @@ export default function Welcome({
                             )}
                         </div>
 
-                        {/* CONTENU OU MESSAGE VIDE */}
                         {recentItems.length > 0 ? (
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {recentItems.map((item) => (

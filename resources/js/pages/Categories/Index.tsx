@@ -1,7 +1,7 @@
-import AppLayout from '../../layouts/app-layout';
 import type { Category, LaravelPagination, PageProps } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { route } from 'ziggy-js';
+import AppLayout from '../../layouts/app-layout';
 
 interface CategoriesIndexProps extends PageProps {
     categories: LaravelPagination<Category>;
@@ -30,12 +30,18 @@ export default function Index({
                             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <h1 className="font-baloo text-3xl font-bold text-gray-900">
-                                        {type === 'object' && '📦 Objets à louer'}
-                                        {type === 'service' && '📋 Services disponibles'}
-                                        {type === 'all' && 'Toutes les catégories'}
+                                        {type === 'object' &&
+                                            '📦 Objets à louer'}
+                                        {type === 'service' &&
+                                            '📋 Services disponibles'}
+                                        {type === 'all' &&
+                                            'Toutes les catégories'}
                                     </h1>
                                     <p className="mt-2 text-sm text-gray-600">
-                                        {categories.total} catégorie{categories.total > 1 ? 's' : ''} disponible{categories.total > 1 ? 's' : ''}
+                                        {categories.total} catégorie
+                                        {categories.total > 1 ? 's' : ''}{' '}
+                                        disponible
+                                        {categories.total > 1 ? 's' : ''}
                                     </p>
                                 </div>
 
@@ -81,14 +87,20 @@ export default function Index({
                                         {categories.data.map((category) => {
                                             // ✅ Debug - à retirer après test
                                             if (!category.id) {
-                                                console.error('Catégorie sans ID:', category);
+                                                console.error(
+                                                    'Catégorie sans ID:',
+                                                    category,
+                                                );
                                                 return null;
                                             }
 
                                             return (
                                                 <Link
                                                     key={category.id}
-                                                    href={route('categories.show', category.id)} // ✅ Utilisez route() au lieu d'URL brute
+                                                    href={route(
+                                                        'categories.show',
+                                                        category.id,
+                                                    )}
                                                     className="group overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-lg"
                                                 >
                                                     {/* En-tête de la card */}
@@ -96,16 +108,22 @@ export default function Index({
                                                         <div className="flex items-start gap-4">
                                                             {category.icon && (
                                                                 <span className="text-5xl">
-                                                                    {category.icon}
+                                                                    {
+                                                                        category.icon
+                                                                    }
                                                                 </span>
                                                             )}
                                                             <div className="flex-1">
-                                                                <h2 className="font-baloo mb-2 text-xl font-bold text-gray-900 group-hover:text-blue-600">
-                                                                    {category.name}
+                                                                <h2 className="mb-2 font-baloo text-xl font-bold text-gray-900 group-hover:text-blue-600">
+                                                                    {
+                                                                        category.name
+                                                                    }
                                                                 </h2>
                                                                 {category.description && (
                                                                     <p className="line-clamp-2 text-sm text-gray-600">
-                                                                        {category.description}
+                                                                        {
+                                                                            category.description
+                                                                        }
                                                                     </p>
                                                                 )}
                                                             </div>
@@ -114,54 +132,66 @@ export default function Index({
 
                                                     {/* Aperçu des 4 meilleurs items */}
                                                     <div className="p-4">
-                                                        {category.items && category.items.length > 0 ? (
+                                                        {category.items &&
+                                                        category.items.length >
+                                                            0 ? (
                                                             <>
                                                                 <div className="mb-3 grid grid-cols-2 gap-2">
-                                                                    {category.items.slice(0, 4).map((item) => (
-                                                                        <div
-                                                                            key={item.id}
-                                                                            className="relative aspect-square overflow-hidden rounded bg-gray-100"
-                                                                        >
-                                                                            {item.picture ? (
-                                                                                <img
-                                                                                    src={`/storage/${item.picture}`}
-                                                                                    alt={item.name}
-                                                                                    className="h-full w-full object-cover transition group-hover:scale-110"
-                                                                                />
-                                                                            ) : (
-                                                                                <div className="flex h-full items-center justify-center text-3xl">
-                                                                                    {category.icon || '📦'}
+                                                                    {category.items
+                                                                        .slice(
+                                                                            0,
+                                                                            4,
+                                                                        )
+                                                                        .map(
+                                                                            (
+                                                                                item,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        item.id
+                                                                                    }
+                                                                                    className="relative aspect-square overflow-hidden rounded bg-gray-100"
+                                                                                >
+                                                                                    {item.picture ? (
+                                                                                        <img
+                                                                                            src={`/storage/${item.picture}`}
+                                                                                            alt={
+                                                                                                item.name
+                                                                                            }
+                                                                                            className="h-full w-full object-cover transition group-hover:scale-110"
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <div className="flex h-full items-center justify-center text-3xl">
+                                                                                            {category.icon ||
+                                                                                                '📦'}
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
-                                                                            )}
-                                                                            
-                                                                            {/* Badge type */}
-                                                                            <div className="absolute top-1 right-1">
-                                                                                {item.type === 'service' ? (
-                                                                                    <span className="rounded bg-blue-500 px-1.5 py-0.5 text-xs font-medium text-white">
-                                                                                        📋
-                                                                                    </span>
-                                                                                ) : (
-                                                                                    <span className="rounded bg-green-500 px-1.5 py-0.5 text-xs font-medium text-white">
-                                                                                        📦
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
+                                                                            ),
+                                                                        )}
                                                                 </div>
 
                                                                 <div className="flex items-center justify-between text-sm">
                                                                     <span className="text-gray-600">
-                                                                        {category.items_count ?? 0} item{(category.items_count ?? 0) > 1 ? 's' : ''}
+                                                                        {category.items_count ??
+                                                                            0}{' '}
+                                                                        item
+                                                                        {(category.items_count ??
+                                                                            0) >
+                                                                        1
+                                                                            ? 's'
+                                                                            : ''}
                                                                     </span>
                                                                     <span className="font-medium text-blue-600 group-hover:underline">
-                                                                        Voir tout →
+                                                                        Voir
+                                                                        tout →
                                                                     </span>
                                                                 </div>
                                                             </>
                                                         ) : (
                                                             <p className="py-8 text-center text-sm text-gray-500">
-                                                                Aucun item pour le moment
+                                                                Aucun item pour
+                                                                le moment
                                                             </p>
                                                         )}
                                                     </div>
@@ -174,21 +204,27 @@ export default function Index({
                                     {categories.last_page > 1 && (
                                         <div className="mt-8 flex justify-center">
                                             <nav className="flex items-center gap-2">
-                                                {categories.links.map((link, index) => (
-                                                    <Link
-                                                        key={index}
-                                                        href={link.url || '#'}
-                                                        preserveScroll
-                                                        className={`rounded px-4 py-2 text-sm font-medium transition ${
-                                                            link.active
-                                                                ? 'bg-blue-600 text-white'
-                                                                : link.url
-                                                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                                : 'cursor-not-allowed bg-gray-50 text-gray-400'
-                                                        }`}
-                                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                                    />
-                                                ))}
+                                                {categories.links.map(
+                                                    (link, index) => (
+                                                        <Link
+                                                            key={index}
+                                                            href={
+                                                                link.url || '#'
+                                                            }
+                                                            preserveScroll
+                                                            className={`rounded px-4 py-2 text-sm font-medium transition ${
+                                                                link.active
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : link.url
+                                                                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                                      : 'cursor-not-allowed bg-gray-50 text-gray-400'
+                                                            }`}
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: link.label,
+                                                            }}
+                                                        />
+                                                    ),
+                                                )}
                                             </nav>
                                         </div>
                                     )}

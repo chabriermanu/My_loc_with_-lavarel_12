@@ -1,9 +1,10 @@
-import type { Media } from '@/components/ItemMediaCarousel';
-import ItemMediaCarousel from '@/components/ItemMediaCarousel';
+import type { Media } from '@/components/Items/ItemMediaCarousel';
+import ItemMediaCarousel from '@/components/Items/ItemMediaCarousel';
 import type { ItemCardProps } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Edit, Eye, Heart, MessageCircle, Star, Trash } from 'lucide-react';
 import { useState } from 'react';
+import { Badge } from '../ui/badge'; // ✅ AJOUTÉ
 import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 
@@ -57,7 +58,6 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
     const handleFavorite = (e: React.MouseEvent) => {
         e.preventDefault();
 
-        // ✅ Mise à jour immédiate
         setLocalIsFavorited(!localIsFavorited);
         setLocalFavoritesCount(
             localIsFavorited
@@ -71,7 +71,6 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
     const handleLike = (e: React.MouseEvent) => {
         e.preventDefault();
 
-        // ✅ Mise à jour immédiate
         setLocalIsLiked(!localIsLiked);
         setLocalLikesCount(
             localIsLiked ? localLikesCount - 1 : localLikesCount + 1,
@@ -93,7 +92,16 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
     const canEditItem = () => auth.user?.id === item.user_id;
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="relative overflow-hidden">
+            {/* ✅ BADGE DÉJÀ LOUÉ - Position absolue en haut à droite */}
+            {!item.is_available && (
+                <div className="absolute top-2 right-2 z-10">
+                    <Badge variant="destructive" className="font-bold">
+                        🚫 Déjà loué
+                    </Badge>
+                </div>
+            )}
+
             {/* MediaCarousel */}
             {medias.length > 0 && <ItemMediaCarousel medias={medias} />}
 
@@ -155,7 +163,6 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             </span>
                         </div>
                     ) : (
-                        // Si c'est son item, afficher juste le compteur
                         localLikesCount > 0 && (
                             <div className="flex items-center space-x-1">
                                 <Heart className="h-6 w-6 text-gray-400" />
@@ -193,7 +200,6 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                             </span>
                         </div>
                     ) : (
-                        // Si c'est son item, afficher juste le compteur
                         localFavoritesCount > 0 && (
                             <div className="flex items-center space-x-1">
                                 <Star className="h-6 w-6 text-gray-400" />
@@ -204,7 +210,7 @@ export default function ItemCard({ item, showActions = false }: ItemCardProps) {
                         )
                     )}
 
-                    {/* COMMENTS - Toujours visible (pour voir les commentaires) */}
+                    {/* COMMENTS - Toujours visible */}
                     <div className="flex items-center space-x-1">
                         <Button variant="ghost" size="icon" asChild>
                             <Link

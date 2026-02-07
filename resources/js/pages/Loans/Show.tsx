@@ -44,10 +44,17 @@ export default function Show({
     borrowerContactInfo,
     showContact,
 }: LoanShowProps) {
+    // ✅ Breadcrumbs corrigés
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('dashboard') },
-        { title: 'Prêts', href: route('loans.index') },
-        { title: `Prêt #${loan.id}`, href: route('loans.show', loan.id) },
+        {
+            title: userRole === 'borrower' ? 'Mes emprunts' : 'Mes prêts',
+            href:
+                userRole === 'borrower'
+                    ? route('loans.borrows')
+                    : route('loans.lends'),
+        },
+        { title: `Prêt #${loan.id}` }, // Pas de href, c'est la page actuelle
     ];
 
     // État pour afficher/masquer le formulaire de partage
@@ -479,13 +486,18 @@ export default function Show({
                     )}
                 </div>
 
-                {/* Bouton retour */}
+                {/* Bouton retour - ✅ Corrigé selon le rôle */}
                 <div className="text-center">
                     <Link
-                        href={route('loans.index')}
+                        href={
+                            userRole === 'borrower'
+                                ? route('loans.borrows')
+                                : route('loans.lends')
+                        }
                         className="text-blue-600 hover:underline"
                     >
-                        ← Retour à la liste des prêts
+                        ← Retour à la liste{' '}
+                        {userRole === 'borrower' ? 'des emprunts' : 'des prêts'}
                     </Link>
                 </div>
             </div>

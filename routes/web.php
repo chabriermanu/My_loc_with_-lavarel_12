@@ -14,29 +14,29 @@ use App\Http\Controllers\ItemMediaController;
 use App\Http\Controllers\ItemReviewController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LocationController;  // ✅ AJOUTÉ
 use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use App\Http\Controllers\Api\ConsentController;
 
 // ============================================================
 // ROUTES PUBLIQUES (sans paramètres dynamiques)
 // ============================================================
 
 Route::get('/', function () {
-    // Items les mieux notés (pour le scroll horizontal)
+    // Items les plus favoris (pour le scroll horizontal)
     $topRatedItems = Item::with(['category', 'owner'])
-        ->withCount(['likes', 'comments'])
+        ->withCount(['likes', 'favorites', 'comments'])
         ->where('is_available', true)
-        ->whereNotNull('rating')
-        ->where('total_ratings', '>', 0)
-        ->orderByDesc('rating')
-        ->orderByDesc('total_ratings')
-        ->take(12)
+        ->orderByDesc('favorites_count')
+        ->orderByDesc('likes_count')
+        ->take(20)
         ->get();
 
     // Items récents (pour une autre section)
     $recentItems = Item::with(['category', 'owner'])
-        ->withCount(['likes', 'comments'])
+        ->withCount(['likes', 'favorites', 'comments'])  // ✅ AJOUTÉ favorites
         ->where('is_available', true)
         ->latest()
         ->take(8)
@@ -64,6 +64,15 @@ Route::get('categories/objets', [CategoryController::class, 'indexObjects'])->na
 Route::get('categories/services', [CategoryController::class, 'indexServices'])->name('categories.services');
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 
+// Routes RGPD - Pages légales
+Route::get('/terms', function () {
+    return Inertia::render('Legal/Terms');
+})->name('terms');
+
+Route::get('/privacy-policy', function () {
+    return Inertia::render('Legal/PrivacyPolicy');
+})->name('privacy-policy');
+
 // ============================================================
 // ROUTES PRIVÉES (authentification requise)
 // ============================================================
@@ -76,6 +85,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Mes Items
     Route::get('my-items', [ItemController::class, 'myItems'])->name('items.my');
 
+    // ============================================================
+    // ROUTES RGPD - CONSENTEMENTS ✅ NOUVEAU
+    // ============================================================
+    Route::prefix('consents')->name('consents.')->group(function () {
+        Route::get('/', [ConsentController::class, 'index'])->name('index');
+        Route::post('/', [ConsentController::class, 'store'])->name('store');
+        Route::get('/check/{consentType}', [ConsentController::class, 'check'])->name('check');
+        Route::delete('/{consentType}', [ConsentController::class, 'revoke'])->name('revoke');
+    });
+
+    // Suppression des données personnelles (RGPD)
+    Route::delete('/user/data', [ConsentController::class, 'deleteAllData'])->name('user.delete-data');
+
     // ⚠️ ROUTES ITEMS (create/edit AVANT les routes avec {item})
     Route::get('items/create', [ItemController::class, 'create'])->name('items.create');
     Route::post('items', [ItemController::class, 'store'])->name('items.store');
@@ -87,14 +109,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('categories', CategoryController::class)->except(['index', 'show']);
 
     // ============================================================
-    // ROUTES LOANS (MISES À JOUR ✅)
+    // ROUTES LOANS
     // ============================================================
-    Route::resource('loans', LoanController::class)->only(['index', 'create', 'store', 'show']);
+    Route::resource('loans', LoanController::class)->only(['create', 'store', 'show']);
     Route::get('borrows', [LoanController::class, 'borrows'])->name('loans.borrows');
     Route::get('lends', [LoanController::class, 'lends'])->name('loans.lends');
-
-    // Actions sur les prêts
-    Route::patch('loans/{loan}', [LoanController::class, 'update'])->name('loans.update');
 
     // Actions sur les prêts
     Route::patch('loans/{loan}', [LoanController::class, 'update'])->name('loans.update');
@@ -103,12 +122,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('loans/{loan}/complete', [LoanController::class, 'complete'])->name('loans.complete');
     Route::patch('loans/{loan}/cancel', [LoanController::class, 'cancel'])->name('loans.cancel');
 
-    // ✅ NOUVELLES ROUTES : Partage de coordonnées
+    // Partage de coordonnées
     Route::post('loans/{loan}/request-contact', [LoanController::class, 'requestContact'])->name('loans.request-contact');
     Route::post('loans/{loan}/share-contact', [LoanController::class, 'shareContact'])->name('loans.share-contact');
     Route::get('loans/{loan}/contact-info', [LoanController::class, 'viewContactInfo'])->name('loans.contact-info');
 
-    // ✅ NOUVELLES ROUTES : Messagerie
+    // Messagerie
     Route::post('loans/{loan}/messages', [LoanController::class, 'sendMessage'])->name('loans.send-message');
     Route::get('messages/unread-count', [LoanController::class, 'unreadMessagesCount'])->name('messages.unread-count');
 
@@ -137,6 +156,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('user-reviews', [UserReviewController::class, 'store'])->name('user-reviews.store');
     Route::patch('user-reviews/{userReview}', [UserReviewController::class, 'update'])->name('user-reviews.update');
     Route::delete('user-reviews/{userReview}', [UserReviewController::class, 'destroy'])->name('user-reviews.destroy');
+
+    // ============================================================
+    // ROUTES LOCATION (✅ CORRIGÉ)
+    // ============================================================
+    Route::get('settings/location', [LocationController::class, 'edit'])->name('location.edit');
+    Route::post('settings/location/search', [LocationController::class, 'searchCommunes'])->name('location.search-communes');  // ✅ NOUVEAU
+    Route::post('settings/location', [LocationController::class, 'update'])->name('location.update');
+    Route::delete('settings/location', [LocationController::class, 'destroy'])->name('location.destroy');
 
     // Routes Admin
     Route::middleware(['admin'])->name('admin.')->prefix('admin')->group(function () {
