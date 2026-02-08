@@ -3,31 +3,33 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class StoreItemReviewRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true;
+        return Auth::check();
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-
-            'item_id' => 'required|exists:items,id',
-            'loan_id' => 'nullable|exists: loans_id',
+            'loan_id' => 'required|exists:loans,id',  // ✅ CORRIGÉ (sans espace)
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|min:10|max500',
+            'comment' => 'nullable|string|max:1000',
+        ];
+    }
 
+    public function messages(): array
+    {
+        return [
+            'loan_id.required' => 'Le prêt est requis.',
+            'loan_id.exists' => 'Ce prêt n\'existe pas.',
+            'rating.required' => 'La note est requise.',
+            'rating.min' => 'La note doit être au minimum 1.',
+            'rating.max' => 'La note doit être au maximum 5.',
+            'comment.max' => 'Le commentaire ne peut pas dépasser 1000 caractères.',
         ];
     }
 }

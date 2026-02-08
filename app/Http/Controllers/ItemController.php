@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\StoreItemReviewRequest;
 use App\Http\Requests\UpdateItemRequest;
 use App\Models\Category;
+use App\Models\ItemReview;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -103,35 +105,42 @@ class ItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreItemRequest $request)
+    public function store(StoreItemReviewRequest $request, Item $item)  // ⭐ Ajoute Item $item
     {
-        $picturePath = null;
-        if ($request->hasFile('picture')) {
-            $picturePath = $request->file('picture')->store('items', 'public');
+        // Vérifier que l'utilisateur a bien complété un prêt
+        $loan = $item->loans()
+            ->where('id', $request->loan_id)
+            ->where('borrower_id', Auth::id())
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$loan) {
+            return back()->withErrors(['error' => 'Vous ne pouvez pas laisser d\'avis pour cet item.']);
         }
 
-        $videoPath = null;
-        if ($request->hasFile('video')) {
-            $videoPath = $request->file('video')->store('items', 'public');
+        // Vérifier qu'il n'a pas déjà laissé un avis
+        if ($item->reviews()->where('user_id', Auth::id())->exists()) {
+            return back()->withErrors(['error' => 'Vous avez déjà laissé un avis pour cet item.']);
         }
 
-        Item::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name),
-            'description' => $request->description,
-            'type' => $request->type,
-            'picture' => $picturePath,
-            'video' => $videoPath,
-            'media_type' => $request->media_type,
+        ItemReview::create([
+            'item_id' => $item->id,  // ⭐ Utilise $item->id
             'user_id' => Auth::id(),
-            'category_id' => $request->category_id,
-            'condition' => $request->condition,
-            'value' => $request->value,
-            'is_available' => true,
+            'loan_id' => $request->loan_id,
+            'rating' => $request->rating,
+            'comment' => $request->comment,
         ]);
 
-        return redirect()->route('items.index')
-            ->with('success', 'Item créé avec succès !');
+        // Recalculer la moyenne
+        $avgRating = $item->reviews()->avg('rating');
+        $totalRatings = $item->reviews()->count();
+
+        $item->update([
+            'rating' => round($avgRating, 2),
+            'total_ratings' => $totalRatings,
+        ]);
+
+        return back()->with('success', 'Avis ajouté avec succès !');
     }
 
     /**
@@ -150,12 +159,16 @@ class ItemController extends Controller
 
         $item->increment('views_count');
 
-        $hasCompletedLoan = Auth::check()
-            ? $item->loans()
-            ->where('borrower_id', Auth::id())
-            ->where('status', 'completed')
-            ->exists()
-            : false;
+        // ⭐ Initialiser à null par défaut
+        $completedLoan = null;
+
+        // Récupérer le loan complété si l'utilisateur est connecté
+        if (Auth::check()) {
+            $completedLoan = $item->loans()
+                ->where('borrower_id', Auth::id())
+                ->where('status', 'completed')
+                ->first();
+        }
 
         $userReview = Auth::check()
             ? $item->reviews()->where('user_id', Auth::id())->first()
@@ -164,7 +177,8 @@ class ItemController extends Controller
         return Inertia::render('Items/Show', [
             'item' => $item,
             'isFavorited' => $item->is_favorited,
-            'hasCompletedLoan' => $hasCompletedLoan,
+            'hasCompletedLoan' => (bool) $completedLoan,
+            'completedLoanId' => $completedLoan?->id,
             'userReview' => $userReview,
         ]);
     }

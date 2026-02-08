@@ -16,10 +16,29 @@ class ItemReviewController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreItemReviewRequest $request)
+    public function store(StoreItemReviewRequest $request, $item)  // ⭐ Pas de type Item
     {
+        // Récupérer l'item manuellement
+        $item = Item::findOrFail($item);
+
+        // Vérifier que l'utilisateur a bien complété un prêt
+        $loan = $item->loans()
+            ->where('id', $request->loan_id)
+            ->where('borrower_id', Auth::id())
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$loan) {
+            return back()->withErrors(['error' => 'Vous ne pouvez pas laisser d\'avis pour cet item.']);
+        }
+
+        // Vérifier qu'il n'a pas déjà laissé un avis
+        if ($item->reviews()->where('user_id', Auth::id())->exists()) {
+            return back()->withErrors(['error' => 'Vous avez déjà laissé un avis pour cet item.']);
+        }
+
         ItemReview::create([
-            'item_id' => $request->item_id,
+            'item_id' => $item->id,
             'user_id' => Auth::id(),
             'loan_id' => $request->loan_id,
             'rating' => $request->rating,
@@ -27,7 +46,6 @@ class ItemReviewController extends Controller
         ]);
 
         // Recalculer la moyenne
-        $item = Item::find($request->item_id);
         $avgRating = $item->reviews()->avg('rating');
         $totalRatings = $item->reviews()->count();
 
@@ -36,8 +54,7 @@ class ItemReviewController extends Controller
             'total_ratings' => $totalRatings,
         ]);
 
-        return redirect()->route('items.show', $request->item_id)
-            ->with('success', 'Avis ajouté avec succès !');
+        return back()->with('success', 'Avis ajouté avec succès !');
     }
 
 

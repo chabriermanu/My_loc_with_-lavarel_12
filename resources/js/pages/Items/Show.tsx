@@ -1,4 +1,4 @@
-import CommentSection from '@/components/CommentSection';
+import CommentSection from '@/components/Comments/CommentSection';
 import type { Media } from '@/components/Items/ItemMediaCarousel';
 import ItemMediaCarousel from '@/components/Items/ItemMediaCarousel';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,10 @@ import { BreadcrumbItem, ShowProps } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { Edit, Heart, Mail, Star, StarOff, Trash, User } from 'lucide-react';
 import { useState } from 'react';
+import StarRating from '@/components/Reviews/StarRating';
+
+import ItemReviewForm from '@/components/Reviews/ItemReviewForm';
+import ReviewSection from '@/components/Reviews/ReviewSection';
 
 declare function route(name: string, params?: any): string;
 
@@ -15,6 +19,7 @@ export default function Show({
     item,
     isFavorited,
     hasCompletedLoan,
+    completedLoanId,
     userReview,
 }: ShowProps) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -375,14 +380,31 @@ export default function Show({
                         </div>
                     </div>
 
-                    {/* SECTION REVIEW */}
+                    {/* SECTION REVIEW - Formulaire pour laisser un avis */}
                     {hasCompletedLoan && !userReview && (
                         <div className="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                             <div className="p-6">
                                 <h2 className="mb-4 text-xl font-semibold">
-                                    Laisser un avis
+                                    Laisser un avis sur cet item
                                 </h2>
-                                {/* Formulaire d'avis ici */}
+                                <ItemReviewForm
+                                    itemId={item.id}
+                                    loanId={completedLoanId || 0} // ⚠️ TODO: Il faudra récupérer le vrai loan_id depuis le backend
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SECTION AVIS - Affichage des avis existants */}
+                    {item.reviews && item.reviews.length > 0 && (
+                        <div className="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                            <div className="p-6">
+                                <ReviewSection
+                                    reviews={item.reviews}
+                                    type="item"
+                                    averageRating={item.rating || 0}
+                                    totalReviews={item.total_ratings || 0}
+                                />
                             </div>
                         </div>
                     )}

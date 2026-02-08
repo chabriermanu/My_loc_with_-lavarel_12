@@ -50,7 +50,8 @@ export interface Item {
     // Relations
     owner: User;
     category: Category;
-    comments?: Comment[];
+    comments?: ItemComment[];
+    reviews?: ItemReview[];
 
     // Compteurs
     likes_count: number;
@@ -179,6 +180,7 @@ export interface ShowProps extends PageProps {
     item: Item;
     isFavorited: boolean;
     hasCompletedLoan: boolean;
+    completedLoanId?: number;
     userReview: ItemReview | null;
 }
 
@@ -191,6 +193,18 @@ export interface ItemReview {
     comment?: string;
     created_at: string;
     user: User;
+}
+
+// ⭐ AJOUTE CETTE INTERFACE
+export interface UserReview {
+    id: number;
+    reviewer_id: number;      // Qui laisse l'avis
+    reviewed_user_id: number; // Qui reçoit l'avis
+    loan_id: number;
+    rating: number;
+    comment?: string;
+    created_at: string;
+    reviewer: User;           // L'utilisateur qui laisse l'avis
 }
 
 // ✅ Props pour les composants

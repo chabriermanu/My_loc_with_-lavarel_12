@@ -32,6 +32,7 @@
 ## ✨ Fonctionnalités principales
 
 ### 🎯 Gestion des annonces
+
 - ✅ Création d'annonces (objets ou services)
 - 📂 Catégorisation avancée (77 catégories hiérarchiques)
 - 🖼️ Upload multiple d'images avec carousel
@@ -41,12 +42,14 @@
 - ⭐ Système de notation (items et utilisateurs)
 
 ### 📍 Géolocalisation
+
 - 🗺️ Localisation automatique via API externe
 - 📏 Calcul de distance entre utilisateurs (formule Haversine)
 - 🎯 Matching par proximité géographique
 - 🔐 Partage RGPD-compliant des coordonnées
 
 ### 👤 Gestion utilisateur
+
 - 🔐 Authentification sécurisée (Laravel Fortify)
 - 🔑 Authentification à deux facteurs (2FA)
 - 📧 Vérification email
@@ -56,6 +59,7 @@
 - ✅ Modale de consentement RGPD au premier login
 
 ### 📝 Système de prêt/réservation
+
 - 📅 Demandes de prêt avec statuts (pending, accepted, refused, completed, cancelled)
 - 📍 Matching géographique automatique
 - 💬 Messagerie interne par prêt
@@ -65,11 +69,13 @@
 - ⭐ Système d'avis bidirectionnel (emprunteur/prêteur)
 
 ### 👑 Administration
+
 - 🗂️ Gestion complète des catégories (CRUD)
 - 📊 Système de popularité des items
 - 🔧 Interface d'administration dédiée
 
 ### 📄 Conformité légale
+
 - 📜 Conditions Générales d'Utilisation (CGU)
 - 🔒 Politique de confidentialité
 - ✅ Système de consentement utilisateur multi-types
@@ -81,6 +87,7 @@
 ## 🛠️ Stack technique
 
 ### Backend
+
 - **Laravel 12** - Framework PHP
 - **MySQL** - Base de données relationnelle
 - **Laravel Fortify** - Authentification complète (login, 2FA, email verification)
@@ -89,6 +96,7 @@
 - **API Géocodage** - Service de localisation externe
 
 ### Frontend
+
 - **React 19** - Bibliothèque UI
 - **TypeScript 5** - Typage statique
 - **Inertia.js 2** - Bridge Laravel/React (SPA moderne)
@@ -98,6 +106,7 @@
 - **Embla Carousel** - Carousel pour galeries photos
 
 ### DevOps & Tooling
+
 - **Vite 5** - Build tool ultra-rapide
 - **Docker** - Containerisation
 - **Laravel Wayfinder** - Génération automatique de routes TypeScript
@@ -110,6 +119,7 @@
 ## 📊 Statistiques du projet
 
 ### Backend
+
 - **27 migrations** - Base de données complète
 - **12 modèles Eloquent** - Relations complexes
 - **14 controllers** - Architecture RESTful
@@ -120,13 +130,16 @@
 - **1 Trait** - Likable (polymorphisme)
 
 ### Frontend
+
 - **31 pages Inertia.js** - Navigation SPA fluide
-- **40+ composants** - Réutilisabilité maximale
-- **~2800 lignes TypeScript** - Code typé et robuste
+- **50+ composants** - Réutilisabilité maximale
+- **~3500 lignes TypeScript** - Code typé et robuste
+- **9 composants Reviews/Comments** - Architecture Clean Code
 - **8+ hooks personnalisés** - Logique réutilisable
 - **160+ routes auto-générées** - Wayfinder
 
 ### Base de données
+
 - **12 tables principales** - Modélisation complète
 - **Relations complexes** - Parent/enfant, polymorphiques, bidirectionnelles
 - **Index optimisés** - Performance des requêtes
@@ -136,6 +149,7 @@
 ## 📦 Installation
 
 ### Prérequis
+
 - PHP >= 8.2
 - Composer
 - Node.js >= 18
@@ -302,6 +316,47 @@ My_loc_with_-lavarel_12/
 
 ---
 
+## 🏗️ Architecture Clean Code - Composants Reviews & Comments
+
+Le système de commentaires et d'avis a été développé en appliquant les **principes SOLID** pour garantir un code maintenable et évolutif.
+
+### 📁 Composants Comments (Refactoring)
+
+```
+components/Comments/
+├── CommentSection.tsx      # Orchestrateur principal (70 lignes)
+├── CommentForm.tsx         # Formulaire de commentaire (40 lignes)
+├── ReplyForm.tsx           # Formulaire de réponse (35 lignes)
+└── CommentItem.tsx         # Affichage récursif (120 lignes)
+```
+
+**Résultats du refactoring :**
+
+- ✅ **-72% de lignes** dans CommentSection (250 → 70)
+- ✅ **Responsabilité unique** par composant
+- ✅ **Composant récursif** pour les réponses imbriquées
+- ✅ **Réutilisable** et testable
+
+### 📁 Composants Reviews
+
+```
+components/Reviews/
+├── StarRating.tsx          # Affichage/saisie étoiles (interactive)
+├── ReviewSection.tsx       # Section d'affichage des avis
+├── ReviewCard.tsx          # Carte d'un avis individuel
+├── ItemReviewForm.tsx      # Formulaire d'avis sur item
+└── UserReviewForm.tsx      # Formulaire d'avis sur utilisateur
+```
+
+**Fonctionnalités :**
+
+- ⭐ **Demi-étoiles** pour moyennes précises
+- 🎨 **Mode interactif** avec hover preview
+- 📊 **Calcul automatique** des moyennes
+- 🔒 **Validation** côté client et serveur
+
+---
+
 ## 🚀 Commandes utiles
 
 ```bash
@@ -336,7 +391,8 @@ php artisan wayfinder:generate  # Générer les routes TS
 
 Consultez le [ROADMAP.md](./ROADMAP.md) pour voir les fonctionnalités planifiées.
 
-### ✅ Complété (72%)
+### ✅ Complété (85%)
+
 - [x] Système d'authentification complet (login, register, 2FA)
 - [x] CRUD complet des annonces (objets + services)
 - [x] CRUD admin des catégories
@@ -345,25 +401,26 @@ Consultez le [ROADMAP.md](./ROADMAP.md) pour voir les fonctionnalités planifié
 - [x] Géolocalisation utilisateurs avec calcul de distance
 - [x] Système de likes polymorphique (Likable trait)
 - [x] Système de favoris avec compteurs
-- [x] Commentaires avec réponses imbriquées
+- [x] Commentaires avec réponses imbriquées (Clean Code refactoring)
 - [x] Système de consentement RGPD complet
 - [x] Pages légales (CGU, Politique de confidentialité)
 - [x] Système de prêts/emprunts avec statuts
 - [x] Partage sécurisé des coordonnées
-- [x] Table messages (messagerie interne)
+- [x] Messagerie interne par prêt
 - [x] 5 Notifications email
 - [x] Breadcrumbs navigation
-- [x] Composants LoanCard et badges statut
+- [x] Système de notation étoiles (StarRating component)
+- [x] Système d'avis sur items et utilisateurs (ItemReview, UserReview)
+- [x] Formulaires de reviews (ItemReviewForm, UserReviewForm)
 
-### 🚧 En cours (25%)
-- [ ] Affichage des commentaires (CommentList/CommentItem)
-- [ ] Système de notation étoiles (StarRating component)
-- [ ] Formulaires de reviews (ItemReviewForm, UserReviewForm)
+### 🚧 En cours (12%)
+
 - [ ] Composants génériques (Pagination, ImageUpload)
 - [ ] Seeders pour données de test
 - [ ] Tests unitaires et feature
 
 ### 💡 À venir (3%)
+
 - [ ] Messagerie temps réel (Pusher/Laravel Reverb)
 - [ ] Recherche avancée full-text (Laravel Scout)
 - [ ] Application mobile (React Native)
@@ -371,6 +428,35 @@ Consultez le [ROADMAP.md](./ROADMAP.md) pour voir les fonctionnalités planifié
 - [ ] Mode sombre
 - [ ] Système de badges/gamification
 - [ ] PWA (Progressive Web App)
+
+---
+
+## 📸 Captures d'écran
+
+### 🏠 Page d'accueil
+
+![Page d'accueil MyLoc](./docs/screenshots/homepage.png)
+_Interface d'accueil avec items populaires et catégories_
+
+### 📦 Détail d'un item
+
+![Détail d'un item](./docs/screenshots/item-detail.png)
+_Page de détail avec carousel, informations et actions_
+
+### ⭐ Système de reviews
+
+![Système de reviews](./docs/screenshots/reviews-system.png)
+_Système de notation par étoiles avec commentaires_
+
+### 💬 Commentaires imbriqués
+
+![Commentaires imbriqués](./docs/screenshots/comments-nested.png)
+_Commentaires avec réponses et système de likes_
+
+### 📊 Dashboard utilisateur
+
+![Dashboard utilisateur](./docs/screenshots/dashboard.png)
+_Tableau de bord avec mes annonces et emprunts_
 
 ---
 
