@@ -3,23 +3,29 @@
 import FirstLoginConsentModal from '@/components/Consent/FirstLoginConsentModal';
 import Nav from '@/components/Nav';
 import type { AppLayoutProps } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Home } from 'lucide-react';
 
 export default function AppLayout({
     children,
     breadcrumbs = [],
 }: AppLayoutProps) {
-    const { auth } = usePage<{
+    const { auth, csrf_token } = usePage<{
         auth: {
             user: {
                 has_given_consents: boolean;
             } | null;
         };
+        csrf_token: string;
     }>().props;
 
     return (
         <div className="flex min-h-screen flex-col bg-linear-to-br from-sky-500 to-fuchsia-500">
+            {/* ⭐ AJOUTE LE HEAD AVEC CSRF */}
+            <Head>
+                <meta name="csrf-token" content={csrf_token} />
+            </Head>
+
             {/* Modal RGPD - s'affiche si l'utilisateur est connecté mais n'a pas donné ses consentements */}
             {auth.user && !auth.user.has_given_consents && (
                 <FirstLoginConsentModal show={true} />

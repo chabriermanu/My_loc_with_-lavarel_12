@@ -1,18 +1,17 @@
 import { createInertiaApp } from '@inertiajs/react';
+
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+
 import { createRoot } from 'react-dom/client';
 import { route as ziggyRoute } from 'ziggy-js';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
-import { configureEcho } from '@laravel/echo-react';
 
-configureEcho({
-    broadcaster: 'pusher',
-});
-// Type pour window
+// ⭐ Configuration Echo/Pusher
 declare global {
     interface Window {
         route: typeof ziggyRoute;
+      
     }
 }
 

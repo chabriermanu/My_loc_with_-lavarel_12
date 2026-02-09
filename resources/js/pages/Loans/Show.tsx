@@ -1,22 +1,18 @@
 import { LoanCard } from '@/components/Loans/LoanCard';
+import MessageBox from '../../components/Loans/MessageBox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
-import { Loan } from '@/types/model';
+import { BreadcrumbItem, PageProps } from '@/types';
+import { User } from '@/types/auth';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import {
-    AlertCircle,
-    Mail,
-    MapPin,
-    MessageCircle,
-    Phone,
-    Send,
-} from 'lucide-react';
+import { AlertCircle, Mail, MapPin, Phone } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
+import { Loan } from '@/types/model';
 
 declare function route(name: string, params?: any): string;
 
-interface LoanShowProps {
+interface LoanShowProps extends PageProps {
     loan: Loan;
+    otherUser: User;
     userRole: 'owner' | 'borrower';
     canRequestContact: boolean;
     canShareContact: boolean;
@@ -35,7 +31,9 @@ interface LoanShowProps {
 }
 
 export default function Show({
+    auth,
     loan,
+    otherUser,
     userRole,
     canRequestContact,
     canShareContact,
@@ -44,7 +42,6 @@ export default function Show({
     borrowerContactInfo,
     showContact,
 }: LoanShowProps) {
-    // ✅ Breadcrumbs corrigés
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('dashboard') },
         {
@@ -54,25 +51,17 @@ export default function Show({
                     ? route('loans.borrows')
                     : route('loans.lends'),
         },
-        { title: `Prêt #${loan.id}` }, // Pas de href, c'est la page actuelle
+        { title: `Prêt #${loan.id}` },
     ];
 
-    // État pour afficher/masquer le formulaire de partage
     const [showShareForm, setShowShareForm] = useState(false);
 
-    // Formulaire de partage de coordonnées
     const shareForm = useForm({
         share_email: false,
         share_phone: false,
         share_address: false,
     });
 
-    // Formulaire d'envoi de message
-    const messageForm = useForm({
-        content: '',
-    });
-
-    // Demander les coordonnées (emprunteur)
     const handleRequestContact = () => {
         router.post(
             route('loans.request-contact', loan.id),
@@ -83,7 +72,6 @@ export default function Show({
         );
     };
 
-    // Partager les coordonnées (propriétaire)
     const handleShareContact: FormEventHandler = (e) => {
         e.preventDefault();
         shareForm.post(route('loans.share-contact', loan.id), {
@@ -91,17 +79,6 @@ export default function Show({
             onSuccess: () => {
                 setShowShareForm(false);
                 shareForm.reset();
-            },
-        });
-    };
-
-    // Envoyer un message
-    const handleSendMessage: FormEventHandler = (e) => {
-        e.preventDefault();
-        messageForm.post(route('loans.send-message', loan.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                messageForm.reset();
             },
         });
     };
@@ -171,7 +148,7 @@ export default function Show({
                         Coordonnées
                     </h2>
 
-                    {/* ⚠️ PROPRIÉTAIRE : Coordonnées de l'emprunteur si retard */}
+                    {/* Propriétaire : Coordonnées de l'emprunteur si retard */}
                     {userRole === 'owner' &&
                         showContact &&
                         borrowerContactInfo &&
@@ -407,86 +384,23 @@ export default function Show({
                         )}
                 </div>
 
-                {/* Messages */}
-                <div className="space-y-4 rounded-lg bg-white p-6 shadow">
-                    <h2 className="flex items-center gap-2 text-xl font-semibold">
-                        <MessageCircle className="h-5 w-5 text-blue-600" />
-                        Messages
-                    </h2>
-
-                    {/* Liste des messages */}
-                    {loan.messages?.length ? (
-                        <div className="max-h-96 space-y-3 overflow-y-auto">
-                            {loan.messages.map((msg) => (
-                                <div
-                                    key={msg.id}
-                                    className={`rounded-md p-3 text-sm ${
-                                        msg.sender_id === loan.borrower_id
-                                            ? 'bg-blue-100'
-                                            : 'bg-gray-100'
-                                    }`}
-                                >
-                                    <p className="font-semibold text-gray-700">
-                                        {msg.sender?.name ?? 'Utilisateur'}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        {msg.content}
-                                    </p>
-                                    <p className="mt-1 text-xs text-gray-400">
-                                        {new Date(
-                                            msg.created_at,
-                                        ).toLocaleDateString('fr-FR', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </p>
-                                </div>
-                            ))}
+                {/* SECTION MESSAGERIE - ⭐ NOUVEAU */}
+                {auth.user &&
+                    (loan.status === 'in_progress' ||
+                        loan.status === 'completed') && (
+                        <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                            <div className="p-6">
+                                <MessageBox
+                                    loanId={loan.id}
+                                    currentUserId={auth.user.id}
+                                    initialMessages={loan.messages || []}
+                                    otherUser={otherUser}
+                                />
+                            </div>
                         </div>
-                    ) : (
-                        <p className="text-gray-500">
-                            Aucun message pour le moment.
-                        </p>
                     )}
 
-                    {/* Formulaire d'envoi de message */}
-                    <form
-                        onSubmit={handleSendMessage}
-                        className="mt-4 flex gap-2"
-                    >
-                        <input
-                            type="text"
-                            value={messageForm.data.content}
-                            onChange={(e) =>
-                                messageForm.setData('content', e.target.value)
-                            }
-                            placeholder="Écrivez votre message..."
-                            className="flex-1 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                            maxLength={2000}
-                        />
-                        <button
-                            type="submit"
-                            disabled={
-                                messageForm.processing ||
-                                !messageForm.data.content.trim()
-                            }
-                            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            <Send className="h-4 w-4" />
-                            Envoyer
-                        </button>
-                    </form>
-
-                    {messageForm.errors.content && (
-                        <p className="text-sm text-red-600">
-                            {messageForm.errors.content}
-                        </p>
-                    )}
-                </div>
-
-                {/* Bouton retour - ✅ Corrigé selon le rôle */}
+                {/* Bouton retour */}
                 <div className="text-center">
                     <Link
                         href={

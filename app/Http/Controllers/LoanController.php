@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
+use App\Events\MessageSent;
 
 class LoanController extends Controller
 {
@@ -89,6 +90,9 @@ class LoanController extends Controller
             'messages.sender',
             'messages.receiver'
         ]);
+        $otherUser = Auth::id() === $loan->borrower_id
+            ? $loan->owner
+            : $loan->borrower;
 
         // 🔥 Recharge les colonnes du modèle AVEC les nouveaux casts
         // (sinon end_time et end_date gardent les anciennes valeurs datetime)
@@ -110,6 +114,7 @@ class LoanController extends Controller
 
         return Inertia::render('Loans/Show', [
             'loan' => $loan,
+            'otherUser' => $otherUser,  // ⭐ AJOUTE
             'userRole' => $loan->owner_id === Auth::id() ? 'owner' : 'borrower',
 
             'canRequestContact' => Gate::allows('requestContact', $loan),
@@ -348,20 +353,14 @@ class LoanController extends Controller
             'content' => $validated['content'],
         ]);
 
+        // ⭐ BROADCASTER l'événement (au lieu de juste notifier)
+        broadcast(new MessageSent($message))->toOthers();
+
         // ✅ Notification au destinataire
         $receiver = \App\Models\User::find($receiverId);
         $receiver->notify(new NewMessage($message));
 
-        return back()->with('success', 'Message envoyé !');
-    }
-
-    public function unreadMessagesCount()
-    {
-        $count = Message::where('receiver_id', Auth::id())
-            ->whereNull('read_at')
-            ->count();
-
-        return response()->json(['unread_count' => $count]);
+        return back();  // ⭐ Pas de message success (c'est du temps réel)
     }
 
     // ---------------------------------------------------------

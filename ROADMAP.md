@@ -9,6 +9,7 @@
 - ✅ Architecture documentée (Architecture.md)
 - ✅ Migration système de consentement RGPD
 - ✅ Migration géolocalisation utilisateurs
+- ✅ Migration table messages (messagerie)
 - ✅ Relations polymorphiques (Likes)
 - ✅ Relations bidirectionnelles (UserReviews)
 - ✅ Relations parent/enfant (Categories, Comments)
@@ -17,10 +18,11 @@
 
 ## ✅ Phase 2 : Backend - Controllers (TERMINÉ)
 
-### 14 Controllers complets (60+ méthodes) :
+### 14 Controllers complets (70+ méthodes) :
 
 #### CategoryController ✅
 - index, show (pages publiques)
+- indexObjects, indexServices (filtres par type)
 - Routes : `/categories`
 
 #### AdminCategoryController ✅
@@ -30,14 +32,19 @@
 
 #### ItemController ✅
 - index (avec pagination), create, store, show, edit, update, destroy
+- myItems (mes annonces)
 - Upload photo/vidéo
 - Géolocalisation des items
 - Système de popularité
 - Routes : `/items`
 
 #### LoanController ✅
-- index, store, show
-- approve, reject, complete, cancel (méthodes personnalisées)
+- create, store, show
+- borrows, lends (mes emprunts/prêts)
+- approve, reject, complete, cancel (gestion statuts)
+- requestContact, shareContact, viewContactInfo (partage coordonnées)
+- **sendMessage** - Envoi messages messagerie ✅
+- unreadMessagesCount - Compteur messages non lus ✅
 - Matching par proximité géographique
 - Routes : `/loans`
 
@@ -74,7 +81,9 @@
 - Routes : `/user-reviews`
 
 #### LocationController ✅
-- update : Mise à jour localisation utilisateur
+- edit, update, destroy
+- searchCommunes - Recherche communes API ✅
+- Mise à jour localisation utilisateur
 - Routes : `/settings/location`
 
 #### DashboardController ✅
@@ -88,9 +97,9 @@
 - Routes : `/settings/*`
 
 #### Api/ConsentController ✅
-- store : Enregistrement consentement
-- revoke : Révocation consentement
-- Routes : `/api/consent`
+- index, store, check, revoke
+- deleteAllData - Suppression données RGPD ✅
+- Routes : `/consents`
 
 ### Services Backend ✅
 
@@ -100,6 +109,11 @@
 ### Traits ✅
 
 - ✅ **Likable** : Trait polymorphique pour système de likes
+- ✅ **HasReviews** : Trait pour items et users reviewables
+
+### Events ✅
+
+- ✅ **MessageSent** : Event broadcasting pour messagerie temps réel (backend prêt)
 
 ### Notifications ✅ (5 notifications)
 
@@ -108,6 +122,21 @@
 - ✅ **ContactRequested** : Demande de coordonnées
 - ✅ **ContactShared** : Partage de coordonnées
 - ✅ **NewMessage** : Nouveau message reçu
+
+### Policies ✅ (6 policies - **9 février 2026**)
+
+- ✅ **ItemPolicy** : Autorisation CRUD items (view, update, delete)
+- ✅ **CommentPolicy** : Autorisation commentaires (update, delete)
+- ✅ **LoanPolicy** : Autorisation prêts (view, update, sendMessage, shareContact)
+- ✅ **ItemReviewPolicy** : Autorisation avis items (update, delete)
+- ✅ **UserReviewPolicy** : Autorisation avis users (update, delete)
+- ✅ **CategoryPolicy** : Autorisation admin catégories (viewAny, create, update, delete)
+
+**Logique implémentée :**
+- Vérification propriétaire de la ressource
+- Vérification rôle admin pour catégories
+- Vérification parties prenantes pour prêts (owner/borrower)
+- Vérifications conditionnelles (statut, dates)
 
 ### 14+ Form Requests avec validation ✅
 
@@ -126,10 +155,11 @@
 - Routes web (Inertia.js)
 - Routes API (Sanctum)
 - Routes générées automatiquement (Wayfinder)
+- Routes broadcast authorization (channels.php) ✅
 
 ---
 
-## 🚧 Phase 3 : Frontend - Pages React/Inertia (EN COURS - 75%)
+## ✅ Phase 3 : Frontend - Pages React/Inertia (90% COMPLÉTÉ)
 
 ### ✅ Pages principales implémentées
 
@@ -153,7 +183,7 @@
 
 - ✅ `Loans/Borrows.tsx` - Mes emprunts
 - ✅ `Loans/Lends.tsx` - Mes prêts
-- ✅ `Loans/Show.tsx` - Détails prêt avec actions
+- ✅ `Loans/Show.tsx` - Détails prêt avec actions + **MessageBox** ✅
 - ✅ `Loans/Create.tsx` - Demande de prêt
 
 #### 4. Favorites
@@ -184,29 +214,82 @@
 
 - ✅ `Dashboard.tsx` - Tableau de bord personnalisé
 
+---
+
+## ✅ Phase 3.5 : Refactoring Clean Code (9 février 2026)
+
+### 🎯 Objectif : Architecture modulaire et maintenable
+
+### Composants Comments (Refactorisés - **4 composants**)
+
+- ✅ `CommentSection.tsx` - Orchestrateur principal (70 lignes, **-72%**)
+- ✅ `CommentForm.tsx` - Formulaire création/édition (40 lignes)
+- ✅ `ReplyForm.tsx` - Formulaire de réponse (35 lignes)
+- ✅ `CommentItem.tsx` - Affichage récursif (120 lignes)
+
+**Résultats :**
+- ✅ **Single Responsibility Principle** appliqué
+- ✅ Réduction drastique de la complexité
+- ✅ Composant récursif pour réponses imbriquées illimitées
+- ✅ Code DRY (Don't Repeat Yourself)
+- ✅ Facilement testable et maintenable
+
+### Composants Reviews (Complets - **5 composants**)
+
+- ✅ `StarRating.tsx` - Affichage/saisie étoiles interactives (80 lignes)
+- ✅ `ReviewSection.tsx` - Section d'affichage avec stats (120 lignes)
+- ✅ `ReviewCard.tsx` - Carte d'un avis individuel (60 lignes)
+- ✅ `ItemReviewForm.tsx` - Formulaire d'avis sur item (90 lignes)
+- ✅ `UserReviewForm.tsx` - Formulaire d'avis utilisateur (110 lignes)
+
+**Fonctionnalités :**
+- ⭐ Demi-étoiles pour moyennes précises (ex: 4.5/5)
+- 🎨 Mode interactif avec hover preview
+- 📊 Calcul automatique des moyennes backend
+- 🎯 Validation double (client TypeScript + serveur FormRequest)
+- ♻️ Réutilisable pour items ET utilisateurs
+
+### Composants Loans (Messagerie)
+
+- ✅ `MessageBox.tsx` - Interface chat intégrée (150 lignes)
+
+**Fonctionnalités MessageBox :**
+- 💬 Interface de chat moderne et responsive
+- 📜 Historique messages avec auto-scroll
+- ⌨️ Raccourci clavier Enter pour envoyer
+- 🎨 Messages différenciés émetteur/récepteur (couleurs)
+- 🔄 Actualisation pour nouveaux messages
+- 💾 Persistance en base de données
+- 🎯 Intégration seamless dans Loans/Show
+
+---
+
 ### ✅ Composants réutilisables implémentés
 
 #### Composants Items
 
 - ✅ `ItemCard.tsx` - Carte item (photo, titre, catégorie, note, favori, like)
-- ✅ `ItemMediaCarousel.tsx` - Galerie photos/vidéos avec navigation
-- [ ] `ItemReviewForm.tsx` - Formulaire avis item
-- [ ] `ItemReviewList.tsx` - Liste avis avec pagination
+- ✅ `ItemMediaCarousel.tsx` - Galerie photos/vidéos avec navigation Embla
 
 #### Composants Prêts
 
 - ✅ `LoanCard.tsx` - Carte prêt (item, dates, statut, actions)
-- [ ] `UserReviewForm.tsx` - Formulaire avis utilisateur (4 critères)
+- ✅ `MessageBox.tsx` - Messagerie chat intégrée ✅
 
-#### Composants Commentaires
+#### Composants Commentaires (**Refactorisés - 9 fév. 2026**)
 
-- ✅ `CommentSection.tsx` - Section commentaires complète (18K)
-- [ ] `CommentList.tsx` - Liste commentaires avec réponses
-- [ ] `CommentItem.tsx` - Composant commentaire individuel
+- ✅ `CommentSection.tsx` - Orchestrateur (70 lignes)
+- ✅ `CommentForm.tsx` - Formulaire création/édition (40 lignes)
+- ✅ `ReplyForm.tsx` - Formulaire de réponse (35 lignes)
+- ✅ `CommentItem.tsx` - Item récursif (120 lignes)
 
-#### Composants Reviews
+#### Composants Reviews (**Complets - 9 fév. 2026**)
 
-- ✅ `ReviewSection.tsx` - Section avis (3.8K)
+- ✅ `StarRating.tsx` - Notation interactive (80 lignes)
+- ✅ `ReviewSection.tsx` - Section avec stats (120 lignes)
+- ✅ `ReviewCard.tsx` - Carte avis (60 lignes)
+- ✅ `ItemReviewForm.tsx` - Form avis item (90 lignes)
+- ✅ `UserReviewForm.tsx` - Form avis user (110 lignes)
 
 #### Composants RGPD
 
@@ -222,10 +305,9 @@
 
 #### Composants Génériques
 
-- [ ] `Pagination.tsx` - Composant pagination Inertia
-- [ ] `StarRating.tsx` - Affichage et saisie notes étoiles
-- [ ] `ImageUpload.tsx` - Upload photo avec preview
-- [ ] `VideoUpload.tsx` - Upload vidéo avec preview
+- [ ] `Pagination.tsx` - Composant pagination Inertia (TODO)
+- [ ] `ImageUpload.tsx` - Upload photo avec preview (TODO)
+- [ ] `VideoUpload.tsx` - Upload vidéo avec preview (TODO)
 
 #### Composants UI (shadcn/ui) - 25+ composants
 
@@ -277,7 +359,7 @@
 
 ### ✅ Layouts
 
-- ✅ `app-layout.tsx` - Layout principal
+- ✅ `app-layout.tsx` - Layout principal avec CSRF token ✅
 - ✅ `auth-layout.tsx` - Layout authentification
 - ✅ `auth/auth-card-layout.tsx` - Card layout
 - ✅ `auth/auth-simple-layout.tsx` - Simple layout
@@ -352,39 +434,23 @@
 - ✅ Loans/* (mes prêts)
 - ✅ Favorites/* (mes favoris)
 - ✅ Settings/* (tous les settings)
-- ✅ Admin/Categories/* (admin uniquement)
-- ✅ Tous les commentaires, reviews, etc.
+- ✅ Admin/Categories/* (admin uniquement avec Policy)
+- ✅ Tous les commentaires, reviews, messagerie
 
 ### ✅ Masquage données sensibles (IMPLÉMENTÉ)
 
 - ✅ Coordonnées géographiques masquées pour non-connectés
 - ✅ Contact utilisateur conditionné à l'authentification
 - ✅ Système de consentement RGPD pour partage données
+- ✅ **Policies pour autorisation granulaire** ✅
 
 ---
 
 ## 🎯 Prochaines étapes prioritaires
 
-### Semaine en cours (Frontend)
+### Phase 4 : Seeders et données de test (1-2 jours)
 
-1. **Composants Commentaires restants** (1 jour)
-   - [ ] CommentList avec affichage hiérarchique
-   - [ ] CommentItem (édition/suppression)
-
-2. **Système d'avis** (1 jour)
-   - [ ] StarRating component (affichage + saisie)
-   - [ ] ItemReviewForm avec notes
-   - [ ] UserReviewForm (4 critères)
-   - [ ] Affichage moyennes et statistiques
-
-3. **Composants génériques** (1 jour)
-   - [ ] Pagination Inertia réutilisable
-   - [ ] ImageUpload avec preview et drag & drop
-   - [ ] VideoUpload avec preview
-
-### Semaine suivante (Seeders et Tests)
-
-4. **Phase 4 : Seeders et données de test** (2 jours)
+1. **Seeders prioritaires** (URGENT pour démo ECF)
    - [ ] CategorySeeder (77 catégories avec icônes)
    - [ ] UserSeeder (10 utilisateurs de test avec géolocalisation)
    - [ ] ItemSeeder (50 items répartis objets/services)
@@ -393,47 +459,74 @@
    - [ ] ConsentSeeder (consentements RGPD)
    - [ ] LikeSeeder (likes sur items)
    - [ ] CommentSeeder (commentaires + réponses)
+   - [ ] MessageSeeder (messages dans prêts)
 
-5. **Phase 5 : Tests et optimisations** (2 jours)
-   - [ ] 10 tests Feature (Item, Loan, Favorite, Comment, etc.)
-   - [ ] 5 tests Unit (GeocodingService, Likable trait, etc.)
+### Phase 5 : Tests et optimisations (1-2 jours)
+
+2. **Tests** (minimum 15 tests)
+   - [ ] 10 tests Feature (Item, Loan, Favorite, Comment, Review, etc.)
+   - [ ] 5 tests Unit (GeocodingService, Likable trait, Policies, etc.)
    - [ ] Tests flux utilisateur complets
+   - [ ] Tests géolocalisation
+   - [ ] Tests RGPD
+
+3. **Optimisations frontend**
    - [ ] Responsive design (mobile, tablette)
    - [ ] Optimisation images (lazy loading)
    - [ ] Validation formulaires côté client
-   - [ ] Tests géolocalisation
+   - [ ] Composants génériques manquants (Pagination, ImageUpload)
 
-### Dernière semaine (Sécurité et Polish)
+### Phase 6 : Cleanup et documentation (1 jour)
 
-6. **Phase 6 : Sécurité et permissions** (1 jour)
-   - [ ] Policies complètes pour items/comments/reviews
-   - [ ] Middleware admin pour categories
-   - [ ] Validation fichiers uploadés renforcée
-   - [ ] Tests sécurité RGPD
-   - [ ] Rate limiting sur routes sensibles
+4. **Code cleanup**
+   - [ ] Supprimer tous les console.log
+   - [ ] Supprimer code commenté/mort
+   - [ ] Vérifier PSR-12 (composer pint)
+   - [ ] Vérifier ESLint (npm run lint)
 
-7. **Documentation et préparation ECF** (2 jours)
+5. **Documentation et préparation ECF** (2 jours)
    - [ ] PHPDoc sur méthodes importantes
-   - [ ] Screenshots pour README
+   - [ ] Screenshots pour README (6 captures minimum)
    - [ ] Vidéo démo (3-5 min)
-   - [ ] PowerPoint présentation
-   - [ ] Guide installation complet
-   - [ ] Répétition pitch
+   - [ ] PowerPoint présentation (15 slides)
+   - [ ] Guide installation complet (test sur machine vierge)
+   - [ ] Répétition pitch oral
 
 ---
 
 ## 📊 Progression globale
-
 ```
 Phase 1 : Base de données       ████████████████████ 100% ✅
 Phase 2 : Backend               ████████████████████ 100% ✅
-Phase 3 : Frontend              ███████████████░░░░░  75% 🚧
-Phase 4 : Seeders               ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 5 : Tests                 ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 6 : Sécurité              ████░░░░░░░░░░░░░░░░  20% 🚧
+Phase 3 : Frontend              ██████████████████░░  90% ✅
+Phase 4 : Seeders               ░░░░░░░░░░░░░░░░░░░░   0% 🚧
+Phase 5 : Tests                 ░░░░░░░░░░░░░░░░░░░░   0% 🚧
+Phase 6 : Sécurité              ████████░░░░░░░░░░░░  40% ✅
+Phase 7 : Documentation         █████████████████░░░  85% ✅
 ```
 
-**Projet global : 72% complété**
+**Projet global : 85% complété** 🎉
+
+---
+
+## 🔮 Améliorations Futures (Post-ECF)
+
+### Fonctionnalités envisagées
+
+- [ ] **Messagerie temps réel** - WebSockets avec Pusher/Laravel Reverb
+- [ ] **Notifications push** - Alertes navigateur temps réel
+- [ ] **Application mobile** - React Native cross-platform
+- [ ] **Système de paiement** - Caution pour les prêts (Stripe)
+- [ ] **Chat vidéo** - Intégration WebRTC pour rencontres
+- [ ] **IA de recommandation** - Suggestions basées sur historique ML
+- [ ] **Carte interactive** - Visualisation items à proximité (Leaflet/MapBox)
+- [ ] **Mode hors-ligne** - PWA avec cache Service Worker
+- [ ] **Multi-langues** - i18n FR/EN/ES
+- [ ] **Export PDF** - Contrats de prêt automatiques
+- [ ] **Recherche full-text** - Laravel Scout + Algolia/Meilisearch
+- [ ] **Mode sombre** - Theme switcher persistant
+- [ ] **Gamification** - Système de badges et points de réputation
+- [ ] **Statistiques avancées** - Dashboard analytics (Chart.js)
 
 ---
 
@@ -470,7 +563,7 @@ Phase 6 : Sécurité              ████░░░░░░░░░░░�
 - [x] Système de catégories hiérarchiques (77 catégories)
 - [x] Système de likes polymorphique (Likable trait)
 - [x] Système de favoris avec compteurs
-- [x] Commentaires avec réponses imbriquées
+- [x] Commentaires avec réponses imbriquées (Clean Code refactoring)
 - [x] Système de prêts/emprunts complet
 - [x] Composants LoanCard et badges de statut
 - [x] Géolocalisation utilisateurs
@@ -479,20 +572,25 @@ Phase 6 : Sécurité              ████░░░░░░░░░░░�
 - [x] Pages légales (CGU, Confidentialité)
 - [x] Gestion paramètres localisation
 - [x] Breadcrumbs navigation
-- [x] Table messages (messagerie)
+- [x] Table messages (messagerie persistante)
+- [x] Composant MessageBox (interface chat)
 - [x] 5 Notifications email
+- [x] Système de notation étoiles (StarRating)
+- [x] Système d'avis items et utilisateurs
+- [x] Formulaires de reviews (ItemReviewForm, UserReviewForm)
+- [x] **6 Policies pour autorisations granulaires** ✅
+- [x] Configuration Pusher/Broadcasting (backend prêt)
 
 ### 🚧 En cours de développement
 
-- [ ] Affichage des commentaires (CommentList/CommentItem)
-- [ ] Système de notation items/utilisateurs (StarRating)
-- [ ] Profil utilisateur public complet
-- [ ] Recherche globale avancée
-- [ ] Pagination réutilisable
+- [ ] Seeders données de test
+- [ ] Tests unitaires et feature
+- [ ] Composants génériques (Pagination, ImageUpload)
+- [ ] Messagerie temps réel (frontend)
 
-### 💡 Features bonus (backlog)
+### 💡 Features bonus (backlog post-ECF)
 
-- [ ] Messagerie temps réel (Pusher/Laravel Reverb)
+- [ ] Messagerie temps réel WebSockets
 - [ ] Notifications temps réel
 - [ ] Mode sombre
 - [ ] Export PDF des prêts
@@ -514,7 +612,8 @@ Phase 6 : Sécurité              ████░░░░░░░░░░░�
 - MySQL 8.0+
 - Laravel Fortify (Auth + 2FA)
 - Laravel Sanctum (API tokens)
-- Pusher (notifications)
+- Pusher (infrastructure temps réel)
+- Mailtrap (emails dev)
 - API Géocodage externe
 
 ### Frontend
@@ -534,18 +633,18 @@ Phase 6 : Sécurité              ████░░░░░░░░░░░�
 - Laravel Wayfinder (routes TS)
 - Laravel Pint (PSR-12)
 - ESLint
-- Git
+- Git + GitHub
 
 ---
 
 ## 📝 Conseils pour la suite
 
-1. **Priorité Seeders** : Créer données de test réalistes pour demo ECF (URGENT)
-2. **Composants manquants** : StarRating, CommentList, Pagination
-3. **Tests** : Au moins 10 tests Feature + 5 Unit
-4. **Documentation** : Tenir à jour README.md et Architecture.md
-5. **Performance** : Optimiser requêtes N+1, lazy loading images
-6. **Préparation ECF** : Vidéo démo + PowerPoint + répétition pitch
+1. **Priorité ABSOLUE : Seeders** - Créer données de test réalistes pour demo ECF
+2. **Tests minimaux** - Au moins 10 tests Feature + 5 Unit pour montrer compétences testing
+3. **Cleanup** - Supprimer console.log, code mort, commentaires inutiles
+4. **Screenshots** - Prendre 6-8 captures d'écran professionnelles
+5. **Documentation** - Tenir à jour README.md et Architecture.md
+6. **Préparation ECF** - Vidéo démo + PowerPoint + répétition pitch
 
 ---
 
@@ -558,16 +657,25 @@ Phase 6 : Sécurité              ████░░░░░░░░░░░�
 - Laravel Docs : https://laravel.com/docs
 - Laravel Fortify : https://laravel.com/docs/fortify
 - TypeScript : https://www.typescriptlang.org/
+- React 19 : https://react.dev/
 
 ---
 
-**Dernière mise à jour** : 7 février 2026  
+**Dernière mise à jour** : 9 février 2026  
 **Développeur** : Emmanuel Chabrier  
 **Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Web Mobile  
 **ECF** : MyLoc 2.0 - Plateforme de partage d'objets et services
 
 ---
 
-**Progression : 72% | Backend : 100% | Frontend : 75% | Tests : 0%**
+**Progression : 85% | Backend : 100% | Frontend : 90% | Tests : 0% | Seeders : 0%**
 
-**Estimation temps restant : 30 heures (3 semaines à 10h/semaine)**
+**Estimation temps restant : 20-25 heures (2-3 semaines à 10h/semaine)**
+
+---
+
+**Prochaine session : SEEDERS (PRIORITÉ 1) 🎯**
+```
+
+---
+

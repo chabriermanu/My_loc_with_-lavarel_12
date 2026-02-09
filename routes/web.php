@@ -14,7 +14,7 @@ use App\Http\Controllers\ItemMediaController;
 use App\Http\Controllers\ItemReviewController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\LoanController;
-use App\Http\Controllers\LocationController;  // ✅ AJOUTÉ
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\UserReviewController;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -36,7 +36,7 @@ Route::get('/', function () {
 
     // Items récents (pour une autre section)
     $recentItems = Item::with(['category', 'owner'])
-        ->withCount(['likes', 'favorites', 'comments'])  // ✅ AJOUTÉ favorites
+        ->withCount(['likes', 'favorites', 'comments'])
         ->where('is_available', true)
         ->latest()
         ->take(8)
@@ -86,7 +86,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('my-items', [ItemController::class, 'myItems'])->name('items.my');
 
     // ============================================================
-    // ROUTES RGPD - CONSENTEMENTS ✅ NOUVEAU
+    // ROUTES RGPD - CONSENTEMENTS
     // ============================================================
     Route::prefix('consents')->name('consents.')->group(function () {
         Route::get('/', [ConsentController::class, 'index'])->name('index');
@@ -98,7 +98,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Suppression des données personnelles (RGPD)
     Route::delete('/user/data', [ConsentController::class, 'deleteAllData'])->name('user.delete-data');
 
-    // ⚠️ ROUTES ITEMS (create/edit AVANT les routes avec {item})
+    // ROUTES ITEMS
     Route::get('items/create', [ItemController::class, 'create'])->name('items.create');
     Route::post('items', [ItemController::class, 'store'])->name('items.store');
     Route::get('items/{item}/edit', [ItemController::class, 'edit'])->name('items.edit');
@@ -156,13 +156,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('items/{item}/reviews', [ItemReviewController::class, 'store'])
         ->name('items.reviews.store');
     Route::patch('items/{item}/reviews/{itemReview}', [ItemReviewController::class, 'update'])->name('items.reviews.update');
-    Route::delete('items/{item}/reviews/{itemReview}', [ItemReviewController::class, 'destroy'])->name('items.reviews.destroy');;
+    Route::delete('items/{item}/reviews/{itemReview}', [ItemReviewController::class, 'destroy'])->name('items.reviews.destroy');
 
     // ============================================================
-    // ROUTES LOCATION (✅ CORRIGÉ)
+    // ROUTES LOCATION
     // ============================================================
     Route::get('settings/location', [LocationController::class, 'edit'])->name('location.edit');
-    Route::post('settings/location/search', [LocationController::class, 'searchCommunes'])->name('location.search-communes');  // ✅ NOUVEAU
+    Route::post('settings/location/search', [LocationController::class, 'searchCommunes'])->name('location.search-communes');
     Route::post('settings/location', [LocationController::class, 'update'])->name('location.update');
     Route::delete('settings/location', [LocationController::class, 'destroy'])->name('location.destroy');
 
@@ -176,7 +176,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ROUTES PUBLIQUES AVEC PARAMÈTRES DYNAMIQUES (À LA FIN !)
 // ============================================================
 
-// ⚠️ Ces routes DOIVENT être après items/create et items/{item}/edit
 Route::get('items/{item}', [ItemController::class, 'show'])
     ->name('items.show')
     ->where('item', '[0-9]+');

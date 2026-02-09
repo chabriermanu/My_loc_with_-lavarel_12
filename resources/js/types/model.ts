@@ -1,4 +1,5 @@
 import type { User } from './auth';
+
 import type { PageProps } from './page';
 
 export interface Category {
@@ -198,13 +199,13 @@ export interface ItemReview {
 // ⭐ AJOUTE CETTE INTERFACE
 export interface UserReview {
     id: number;
-    reviewer_id: number;      // Qui laisse l'avis
+    reviewer_id: number; // Qui laisse l'avis
     reviewed_user_id: number; // Qui reçoit l'avis
     loan_id: number;
     rating: number;
     comment?: string;
     created_at: string;
-    reviewer: User;           // L'utilisateur qui laisse l'avis
+    reviewer: User; // L'utilisateur qui laisse l'avis
 }
 
 // ✅ Props pour les composants
@@ -222,4 +223,16 @@ export interface ItemCardProps {
 
 export interface CategoryCardProps {
     category: Category;
+}
+
+export interface LoanShowProps extends PageProps {
+    loan: Loan;
+    otherUser: User;
+    userRole: 'owner' | 'borrower';
+    canRequestContact: boolean;
+    canShareContact: boolean;
+    canViewContactInfo: boolean;
+    contactInfo: any;
+    showContact: boolean;
+    borrowerContactInfo: any;
 }
