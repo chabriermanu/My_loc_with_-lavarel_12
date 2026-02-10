@@ -63,6 +63,30 @@ export default function MessageBox({
             },
         );
     };
+    // ⭐ AJOUTE CE useEffect pour le WebSocket
+    useEffect(() => {
+        if (!loanId) return;
+
+        console.log('🔌 Connexion au canal privé loan.' + loanId);
+
+        // Écouter le canal PRIVÉ (car configuré dans channels.php)
+        const channel = window.Echo.private(`loan.${loanId}`).listen(
+            '.message.sent',
+            (e: any) => {
+               
+
+                // Ajoute le nouveau message SEULEMENT si ce n'est pas le tien
+                if (e.message.sender_id !== currentUserId) {
+                    setMessages((prev) => [...prev, e.message]);
+                }
+            },
+        );
+
+        return () => {
+           
+            window.Echo.leave(`loan.${loanId}`);
+        };
+    }, [loanId, currentUserId]);
 
     return (
         <div className="flex h-[500px] flex-col rounded-lg border bg-white shadow-sm">

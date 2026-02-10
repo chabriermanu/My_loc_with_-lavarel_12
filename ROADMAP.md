@@ -253,6 +253,14 @@
 
 - ✅ `MessageBox.tsx` - Interface chat intégrée (150 lignes)
 
+**Fonctionnalités MessageBox (✅ 10 février 2026) :**
+- ⚡ **Messages en temps réel** via WebSocket (Pusher)
+- 🔌 Laravel Echo configuré avec authentification
+- 📡 Event MessageSent avec ShouldBroadcastNow
+- 🔐 Canal privé sécurisé par loan_id
+- 🎯 Écoute événement `.message.sent`
+- 🔄 Réception instantanée sans refresh
+
 **Fonctionnalités MessageBox :**
 - 💬 Interface de chat moderne et responsive
 - 📜 Historique messages avec auto-scroll
@@ -498,14 +506,14 @@
 ```
 Phase 1 : Base de données       ████████████████████ 100% ✅
 Phase 2 : Backend               ████████████████████ 100% ✅
-Phase 3 : Frontend              ██████████████████░░  90% ✅
+Phase 3 : Frontend              ███████████████████░  95% ✅
 Phase 4 : Seeders               ░░░░░░░░░░░░░░░░░░░░   0% 🚧
 Phase 5 : Tests                 ░░░░░░░░░░░░░░░░░░░░   0% 🚧
 Phase 6 : Sécurité              ████████░░░░░░░░░░░░  40% ✅
 Phase 7 : Documentation         █████████████████░░░  85% ✅
 ```
 
-**Projet global : 85% complété** 🎉
+**Projet global : 87% complété** 🎉
 
 ---
 
@@ -513,7 +521,7 @@ Phase 7 : Documentation         ████████████████
 
 ### Fonctionnalités envisagées
 
-- [ ] **Messagerie temps réel** - WebSockets avec Pusher/Laravel Reverb
+- [x] **Messagerie temps réel** - WebSockets avec Pusher ✅ **IMPLÉMENTÉ 10 février 2026**
 - [ ] **Notifications push** - Alertes navigateur temps réel
 - [ ] **Application mobile** - React Native cross-platform
 - [ ] **Système de paiement** - Caution pour les prêts (Stripe)
@@ -586,7 +594,7 @@ Phase 7 : Documentation         ████████████████
 - [ ] Seeders données de test
 - [ ] Tests unitaires et feature
 - [ ] Composants génériques (Pagination, ImageUpload)
-- [ ] Messagerie temps réel (frontend)
+- [x] Messagerie temps réel (frontend) ✅ **10 février 2026**
 
 ### 💡 Features bonus (backlog post-ECF)
 
@@ -661,14 +669,14 @@ Phase 7 : Documentation         ████████████████
 
 ---
 
-**Dernière mise à jour** : 9 février 2026  
+**Dernière mise à jour** : 10 février 2026  
 **Développeur** : Emmanuel Chabrier  
 **Formation** : AFPA Saint-Jean-de-Védas - Développeur Web et Web Mobile  
 **ECF** : MyLoc 2.0 - Plateforme de partage d'objets et services
 
 ---
 
-**Progression : 85% | Backend : 100% | Frontend : 90% | Tests : 0% | Seeders : 0%**
+**Progression : 87% | Backend : 100% | Frontend : 95% | Tests : 0% | Seeders : 0%**
 
 **Estimation temps restant : 20-25 heures (2-3 semaines à 10h/semaine)**
 

@@ -88,7 +88,7 @@
 - 🔐 Protection CSRF sur toutes les routes sensibles
 - 🚫 Rate limiting sur routes critiques
 
-### 💬 Système de Messagerie
+### 💬 Système de Messagerie Temps Réel
 
 - 💾 Messages persistants en base de données
 - 🎨 Interface de chat intuitive (MessageBox component)

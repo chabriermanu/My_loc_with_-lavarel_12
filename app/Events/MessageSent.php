@@ -6,40 +6,32 @@ use App\Models\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;  // ⭐ CHANGÉ ICI
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+class MessageSent implements ShouldBroadcastNow  // ⭐ CHANGÉ ICI
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
         public Message $message
-    ) {
-        // Charger la relation sender pour l'affichage
+    ) {        
         $this->message->load('sender');
     }
 
-    /**
-     * Canal privé pour ce prêt
-     */
     public function broadcastOn(): Channel
     {
+       
+        
         return new PrivateChannel('loan.' . $this->message->loan_id);
     }
 
-    /**
-     * Nom de l'événement
-     */
     public function broadcastAs(): string
     {
         return 'message.sent';
     }
 
-    /**
-     * Données à broadcaster
-     */
     public function broadcastWith(): array
     {
         return [

@@ -24,7 +24,7 @@ class LoanController extends Controller
     //-----------------------------------------
     // 1) ROUTES REST PRINCIPALES
     //--------------------------------------------
-   
+
 
     public function create(Request $request)
     {
@@ -62,7 +62,7 @@ class LoanController extends Controller
                 ->with('error', 'Cet item n\'est pas disponible');
         }
 
-        Loan::create([
+        $loan = Loan::create([  // ⭐ Récupère le loan créé
             'item_id' => $item->id,
             'owner_id' => $item->user_id,
             'borrower_id' => Auth::id(),
@@ -74,8 +74,9 @@ class LoanController extends Controller
             'notes' => $request->notes,
         ]);
 
-        return redirect()->route('loans.index')
-            ->with('success', 'Demande prêt envoyée !');
+        // ⭐ PASSE le $loan en paramètre
+        return redirect()->route('loans.show', $loan)
+            ->with('success', 'Demande de prêt envoyée !');
     }
 
     public function show(Loan $loan)
@@ -103,14 +104,6 @@ class LoanController extends Controller
             ->where('receiver_id', Auth::id())
             ->whereNull('read_at')
             ->each->markAsRead();
-
-        \Log::info('DEBUG SHOW', [
-            'end_date' => $loan->end_date,
-            'end_time' => $loan->end_time,
-            'showContact' => $this->shouldShowBorrowerContact($loan),
-        ]);
-
-
 
         return Inertia::render('Loans/Show', [
             'loan' => $loan,
@@ -341,7 +334,6 @@ class LoanController extends Controller
 
         $user = Auth::user();
 
-        // Déterminer le destinataire
         $receiverId = $loan->borrower_id === $user->id
             ? $loan->owner_id
             : $loan->borrower_id;
@@ -353,14 +345,18 @@ class LoanController extends Controller
             'content' => $validated['content'],
         ]);
 
-        // ⭐ BROADCASTER l'événement (au lieu de juste notifier)
+        // 🔥 LOG AVANT BROADCAST
+        
+
         broadcast(new MessageSent($message))->toOthers();
 
-        // ✅ Notification au destinataire
+        // 🔥 LOG APRÈS BROADCAST
+        
+
         $receiver = \App\Models\User::find($receiverId);
         $receiver->notify(new NewMessage($message));
 
-        return back();  // ⭐ Pas de message success (c'est du temps réel)
+        return back();
     }
 
     // ---------------------------------------------------------
@@ -409,15 +405,7 @@ class LoanController extends Controller
         // Ajouter 4h de délai de grâce
         $gracePeriodEnd = $endDateTime->copy()->addMinutes(30);
 
-        \Log::info('DEBUG RETARD', [
-            'loan_id' => $loan->id,
-            'end_date_raw' => $endDate,
-            'end_time_raw' => $endTime,
-            'end_datetime' => $endDateTime->toDateTimeString(),
-            'grace_period_end' => $gracePeriodEnd->toDateTimeString(),
-            'now' => now()->toDateTimeString(),
-            'is_late' => now()->greaterThan($gracePeriodEnd),
-        ]);
+       
 
         return now()->greaterThan($gracePeriodEnd);
     }
