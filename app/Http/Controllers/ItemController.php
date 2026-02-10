@@ -4,19 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Http\Requests\StoreItemRequest;
-use App\Http\Requests\StoreItemReviewRequest;
 use App\Http\Requests\UpdateItemRequest;
 use App\Models\Category;
-use App\Models\ItemReview;
+use App\Services\SecureFileUploadService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-
 
 class ItemController extends Controller
 {
+    /**
+     * Injection du service d'upload sécurisé
+     */
+    public function __construct(
+        private SecureFileUploadService $fileUploadService
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -43,9 +47,8 @@ class ItemController extends Controller
                     )) AS distance',
                     [$userLat, $userLng, $userLat]
                 )
-                ->orderBy('distance', 'asc'); // Tri par distance croissante
+                ->orderBy('distance', 'asc');
         } else {
-            // Tri par défaut : les plus récents
             $query->latest();
         }
 
@@ -104,43 +107,51 @@ class ItemController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * 🛡️ SÉCURISÉ avec SecureFileUploadService
      */
-    public function store(StoreItemReviewRequest $request, Item $item)  // ⭐ Ajoute Item $item
+    public function store(StoreItemRequest $request)
     {
-        // Vérifier que l'utilisateur a bien complété un prêt
-        $loan = $item->loans()
-            ->where('id', $request->loan_id)
-            ->where('borrower_id', Auth::id())
-            ->where('status', 'completed')
-            ->first();
+        try {
+            // 🛡️ Upload sécurisé de l'image
+            $picturePath = null;
+            if ($request->hasFile('picture')) {
+                $picturePath = $this->fileUploadService->uploadImage(
+                    $request->file('picture')
+                );
+            }
 
-        if (!$loan) {
-            return back()->withErrors(['error' => 'Vous ne pouvez pas laisser d\'avis pour cet item.']);
+            // 🛡️ Upload sécurisé de la vidéo
+            $videoPath = null;
+            if ($request->hasFile('video')) {
+                $videoPath = $this->fileUploadService->uploadVideo(
+                    $request->file('video')
+                );
+            }
+
+            // Créer l'item
+            $item = Item::create([
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'description' => $request->description,
+                'type' => $request->type,
+                'picture' => $picturePath,
+                'video' => $videoPath,
+                'media_type' => $request->media_type,
+                'category_id' => $request->category_id,
+                'condition' => $request->condition,
+                'value' => $request->value,
+                'user_id' => Auth::id(),
+                'is_available' => true,
+            ]);
+
+            return redirect()->route('items.show', $item)
+                ->with('success', 'Item créé avec succès !');
+        } catch (\InvalidArgumentException $e) {
+            // Erreur de validation du fichier
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         }
-
-        // Vérifier qu'il n'a pas déjà laissé un avis
-        if ($item->reviews()->where('user_id', Auth::id())->exists()) {
-            return back()->withErrors(['error' => 'Vous avez déjà laissé un avis pour cet item.']);
-        }
-
-        ItemReview::create([
-            'item_id' => $item->id,  // ⭐ Utilise $item->id
-            'user_id' => Auth::id(),
-            'loan_id' => $request->loan_id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
-        ]);
-
-        // Recalculer la moyenne
-        $avgRating = $item->reviews()->avg('rating');
-        $totalRatings = $item->reviews()->count();
-
-        $item->update([
-            'rating' => round($avgRating, 2),
-            'total_ratings' => $totalRatings,
-        ]);
-
-        return back()->with('success', 'Avis ajouté avec succès !');
     }
 
     /**
@@ -159,10 +170,8 @@ class ItemController extends Controller
 
         $item->increment('views_count');
 
-        // ⭐ Initialiser à null par défaut
         $completedLoan = null;
 
-        // Récupérer le loan complété si l'utilisateur est connecté
         if (Auth::check()) {
             $completedLoan = $item->loans()
                 ->where('borrower_id', Auth::id())
@@ -206,6 +215,7 @@ class ItemController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * 🛡️ SÉCURISÉ avec SecureFileUploadService
      */
     public function update(UpdateItemRequest $request, Item $item)
     {
@@ -213,46 +223,61 @@ class ItemController extends Controller
             abort(403, 'Action non autorisée');
         }
 
-        // Gestion de l'image
-        if ($request->hasFile('picture')) {
-            if ($item->picture) {
-                Storage::disk('public')->delete($item->picture);
-            }
-            $picturePath = $request->file('picture')->store('items', 'public');
-        } else {
+        try {
+            // 🛡️ Gestion sécurisée de l'image
             $picturePath = $item->picture;
-        }
+            if ($request->hasFile('picture')) {
+                // Supprimer l'ancienne image
+                if ($item->picture) {
+                    $this->fileUploadService->deleteFile($item->picture);
+                }
 
-        // Gestion de la vidéo
-        if ($request->hasFile('video')) {
-            if ($item->video) {
-                Storage::disk('public')->delete($item->video);
+                // Upload sécurisé de la nouvelle image
+                $picturePath = $this->fileUploadService->uploadImage(
+                    $request->file('picture')
+                );
             }
-            $videoPath = $request->file('video')->store('items', 'public');
-        } else {
+
+            // 🛡️ Gestion sécurisée de la vidéo
             $videoPath = $item->video;
+            if ($request->hasFile('video')) {
+                // Supprimer l'ancienne vidéo
+                if ($item->video) {
+                    $this->fileUploadService->deleteFile($item->video);
+                }
+
+                // Upload sécurisé de la nouvelle vidéo
+                $videoPath = $this->fileUploadService->uploadVideo(
+                    $request->file('video')
+                );
+            }
+
+            $item->update([
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'description' => $request->description,
+                'type' => $request->type,
+                'picture' => $picturePath,
+                'video' => $videoPath,
+                'media_type' => $request->media_type,
+                'category_id' => $request->category_id,
+                'condition' => $request->condition,
+                'value' => $request->value,
+                'is_available' => true,
+            ]);
+
+            return redirect()->route('items.show', $item)
+                ->with('success', 'Item modifié avec succès !');
+        } catch (\InvalidArgumentException $e) {
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         }
-
-        $item->update([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name),
-            'description' => $request->description,
-            'type' => $request->type,
-            'picture' => $picturePath,
-            'video' => $videoPath,
-            'media_type' => $request->media_type,
-            'category_id' => $request->category_id,
-            'condition' => $request->condition,
-            'value' => $request->value,
-            'is_available' => true,
-        ]);
-
-        return redirect()->route('items.index')
-            ->with('success', 'Item modifié avec succès !');
     }
 
     /**
      * Remove the specified resource from storage.
+     * 🛡️ SÉCURISÉ avec SecureFileUploadService
      */
     public function destroy(Item $item)
     {
@@ -261,19 +286,67 @@ class ItemController extends Controller
         }
 
         if ($item->loans()->whereIn('status', ['pending', 'approved', 'in_progress'])->exists()) {
-            return redirect()->back()->with('error', 'Impossible de supprimer un item avec des prêts en cours !');
+            return redirect()->back()
+                ->with('error', 'Impossible de supprimer un item avec des prêts en cours !');
         }
 
-        // Supprimer les fichiers avant de supprimer l'item
+        // 🛡️ Supprimer les fichiers de manière sécurisée
         if ($item->picture) {
-            Storage::disk('public')->delete($item->picture);
+            $this->fileUploadService->deleteFile($item->picture);
         }
+
         if ($item->video) {
-            Storage::disk('public')->delete($item->video);
+            $this->fileUploadService->deleteFile($item->video);
         }
 
         $item->delete();
 
-        return redirect()->route('items.index')->with('success', 'Item supprimé avec succès !');
+        return redirect()->route('items.index')
+            ->with('success', 'Item supprimé avec succès !');
+    }
+
+    /**
+     * 🛡️ Afficher l'image d'un item de manière sécurisée
+     * Les fichiers sont dans private/ donc pas accessibles directement
+     */
+    public function showPicture(Item $item)
+    {
+        if (!$item->picture) {
+            abort(404, 'Image non trouvée');
+        }
+
+        $path = storage_path('app/' . $item->picture);
+
+        if (!file_exists($path)) {
+            abort(404, 'Fichier non trouvé');
+        }
+
+        // Retourner le fichier avec les bons headers
+        return response()->file($path, [
+            'Content-Type' => mime_content_type($path),
+            'Cache-Control' => 'public, max-age=31536000', // Cache 1 an
+        ]);
+    }
+
+    /**
+     * 🛡️ Afficher la vidéo d'un item de manière sécurisée
+     */
+    public function showVideo(Item $item)
+    {
+        if (!$item->video) {
+            abort(404, 'Vidéo non trouvée');
+        }
+
+        $path = storage_path('app/' . $item->video);
+
+        if (!file_exists($path)) {
+            abort(404, 'Fichier non trouvé');
+        }
+
+        // Retourner le fichier avec les bons headers
+        return response()->file($path, [
+            'Content-Type' => mime_content_type($path),
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
     }
 }

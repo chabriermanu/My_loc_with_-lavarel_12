@@ -74,6 +74,25 @@ Route::get('/privacy-policy', function () {
 })->name('privacy-policy');
 
 // ============================================================
+// 🛡️ ROUTES SÉCURISÉES POUR SERVIR LES FICHIERS (NOUVEAU)
+// ============================================================
+
+// Servir les images d'items de manière sécurisée
+Route::get('items/{item}/picture', [ItemController::class, 'showPicture'])
+    ->name('items.picture')
+    ->where('item', '[0-9]+');
+
+// Servir les vidéos d'items de manière sécurisée
+Route::get('items/{item}/video', [ItemController::class, 'showVideo'])
+    ->name('items.video')
+    ->where('item', '[0-9]+');
+
+// Servir les médias additionnels de manière sécurisée
+Route::get('media/{itemMedia}/file', [ItemMediaController::class, 'showFile'])
+    ->name('media.file')
+    ->where('itemMedia', '[0-9]+');
+
+// ============================================================
 // ROUTES PRIVÉES (authentification requise)
 // ============================================================
 
@@ -100,9 +119,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ROUTES ITEMS
     Route::get('items/create', [ItemController::class, 'create'])->name('items.create');
-    Route::post('items', [ItemController::class, 'store'])->name('items.store');
+
+    // Routes avec uploads → Ajouter ThrottleUploads middleware
+    Route::middleware([\App\Http\Middleware\ThrottleUploads::class])->group(function () {
+        Route::post('items', [ItemController::class, 'store'])->name('items.store');
+        Route::put('items/{item}', [ItemController::class, 'update'])->name('items.update');
+        Route::post('/items/{item}/media', [ItemMediaController::class, 'store'])->name('items.media.store');
+    });
+
     Route::get('items/{item}/edit', [ItemController::class, 'edit'])->name('items.edit');
-    Route::put('items/{item}', [ItemController::class, 'update'])->name('items.update');
     Route::delete('items/{item}', [ItemController::class, 'destroy'])->name('items.destroy');
 
     // Routes Categories
@@ -143,8 +168,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
-    // Routes ItemMedia
-    Route::post('/items/{item}/media', [ItemMediaController::class, 'store'])->name('items.media.store');
+    // Routes ItemMedia - Suppression uniquement (pas d'upload)
     Route::delete('/media/{itemMedia}', [ItemMediaController::class, 'destroy'])->name('items.media.destroy');
 
     // Routes Item Reviews
