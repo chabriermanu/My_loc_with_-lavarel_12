@@ -111,7 +111,8 @@ class ItemMediaController extends Controller
             abort(404, 'Fichier non trouvé');
         }
 
-        $path = storage_path('app/' . $itemMedia->media_path);
+        // Normaliser les slashes pour Windows
+        $path = str_replace('/', DIRECTORY_SEPARATOR, storage_path('app/' . $itemMedia->media_path));
 
         if (!file_exists($path)) {
             abort(404, 'Fichier non trouvé');

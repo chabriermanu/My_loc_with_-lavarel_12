@@ -154,7 +154,7 @@ export default function Index({
                                                                                 >
                                                                                     {item.picture ? (
                                                                                         <img
-                                                                                            src={`/storage/${item.picture}`}
+                                                                                            src={`/items/${item.id}/picture`}
                                                                                             alt={
                                                                                                 item.name
                                                                                             }

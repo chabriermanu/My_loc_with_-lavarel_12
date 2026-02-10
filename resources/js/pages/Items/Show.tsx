@@ -29,13 +29,13 @@ export default function Show({
     if (item.picture) {
         medias.push({
             type: 'image',
-            src: `/storage/${item.picture}`,
+            src: `/items/${item.id}/picture`,
         });
     }
     if (item.video) {
         medias.push({
             type: 'video',
-            src: `/storage/${item.video}`,
+            src: `/items/${item.id}/video`,
         });
     }
 

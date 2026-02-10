@@ -41,10 +41,10 @@ export default function Edit({
     });
 
     const [previewUrl, setPreviewUrl] = useState<string | null>(
-        item.picture ? `/storage/${item.picture}` : null,
+        item.picture ? `/items/${item.id}/picture` : null,
     );
     const [videoPreview, setVideoPreview] = useState<string | null>(
-        item.video ? `/storage/${item.video}` : null,
+        item.video ? `/items/${item.id}/video` : null,
     );
 
     const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {

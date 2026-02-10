@@ -37,10 +37,10 @@ class SecureFileUploadService
     /**
      * Dimensions min/max
      */
-    private const MIN_WIDTH = 200;
-    private const MIN_HEIGHT = 200;
-    private const MAX_WIDTH = 4000;
-    private const MAX_HEIGHT = 4000;
+    private const MIN_WIDTH = 50;    // 200 → 50 (plus permissif)
+    private const MIN_HEIGHT = 50;   // 200 → 50 (plus permissif)
+    private const MAX_WIDTH = 8000;  // 4000 → 8000 (plus permissif)
+    private const MAX_HEIGHT = 8000; // 4000 → 8000 (plus permissif)
 
     /**
      * Upload sécurisé d'une image
@@ -51,23 +51,33 @@ class SecureFileUploadService
      */
     public function uploadImage(UploadedFile $file): string
     {
+        \Log::info('🔥 uploadImage() appelé', ['filename' => $file->getClientOriginalName()]);
+
         // 1. Vérifier le MIME type déclaré
+        \Log::info('1. Validation MIME type...');
         $this->validateMimeType($file, self::ALLOWED_IMAGE_TYPES);
 
         // 2. Vérifier les magic bytes (signature réelle du fichier)
+        \Log::info('2. Validation magic bytes...');
         $this->validateMagicBytes($file, self::ALLOWED_IMAGE_TYPES);
 
         // 3. Vérifier la taille
+        \Log::info('3. Validation taille...');
         $this->validateSize($file, self::MAX_IMAGE_SIZE);
 
         // 4. Vérifier les dimensions
+        \Log::info('4. Validation dimensions...');
         $this->validateImageDimensions($file);
 
         // 5. Générer un nom sécurisé
+        \Log::info('5. Génération nom fichier...');
         $filename = $this->generateSecureFilename($file);
+        \Log::info('Nom généré', ['filename' => $filename]);
 
         // 6. Stocker dans un dossier PRIVÉ (hors public/)
-        $path = $file->storeAs('private/items', $filename, 'local');
+        \Log::info('6. Stockage fichier...', ['path' => 'items/' . $filename]);
+        $path = $file->storeAs('items', $filename, 'local');
+        \Log::info('✅ Fichier stocké', ['path' => $path]);
 
         return $path;
     }
@@ -94,7 +104,7 @@ class SecureFileUploadService
         $filename = $this->generateSecureFilename($file);
 
         // 5. Stocker dans un dossier PRIVÉ
-        $path = $file->storeAs('private/videos', $filename, 'local');
+        $path = $file->storeAs('videos', $filename, 'local');
 
         return $path;
     }

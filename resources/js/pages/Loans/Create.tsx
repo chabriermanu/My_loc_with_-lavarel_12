@@ -57,7 +57,7 @@ export default function Create({ item }: CreateProps) {
                                 <div className="flex items-start gap-4">
                                     {item.picture && (
                                         <img
-                                            src={`/storage/${item.picture}`}
+                                            src={`/items/${item.id}/picture`}
                                             alt={item.name}
                                             className="h-24 w-24 rounded-lg object-cover"
                                         />

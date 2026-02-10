@@ -136,7 +136,7 @@ class ItemController extends Controller
                 'type' => $request->type,
                 'picture' => $picturePath,
                 'video' => $videoPath,
-                'media_type' => $request->media_type,
+                'media_type' => $request->media_type ?? 'image', // Valeur par défaut si non fourni
                 'category_id' => $request->category_id,
                 'condition' => $request->condition,
                 'value' => $request->value,
@@ -259,7 +259,7 @@ class ItemController extends Controller
                 'type' => $request->type,
                 'picture' => $picturePath,
                 'video' => $videoPath,
-                'media_type' => $request->media_type,
+                'media_type' => $request->media_type ?? 'image', // Valeur par défaut si non fourni
                 'category_id' => $request->category_id,
                 'condition' => $request->condition,
                 'value' => $request->value,
@@ -315,7 +315,8 @@ class ItemController extends Controller
             abort(404, 'Image non trouvée');
         }
 
-        $path = storage_path('app/' . $item->picture);
+        // Normaliser les slashes pour Windows
+        $path = str_replace('/', DIRECTORY_SEPARATOR, storage_path('app/' . $item->picture));
 
         if (!file_exists($path)) {
             abort(404, 'Fichier non trouvé');
@@ -337,7 +338,8 @@ class ItemController extends Controller
             abort(404, 'Vidéo non trouvée');
         }
 
-        $path = storage_path('app/' . $item->video);
+        // Normaliser les slashes pour Windows
+        $path = str_replace('/', DIRECTORY_SEPARATOR, storage_path('app/' . $item->video));
 
         if (!file_exists($path)) {
             abort(404, 'Fichier non trouvé');
