@@ -548,7 +548,7 @@ php artisan storage:link     # Créer symlink public/storage
 
 ### 💡 Améliorations futures (3%)
 
-- [ ] **Messagerie temps réel** - WebSockets avec Pusher/Laravel Reverb
+- [x] ~~**Messagerie temps réel**~~ ✅ **IMPLÉMENTÉ 10 février 2026** - WebSockets avec Pusher/Laravel Reverb
 - [ ] **Notifications push** - Alertes navigateur temps réel
 - [ ] **Application mobile** - React Native
 - [ ] **Système de paiement** - Caution pour les prêts (Stripe)

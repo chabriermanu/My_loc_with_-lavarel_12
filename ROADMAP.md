@@ -598,7 +598,7 @@ Phase 7 : Documentation         ████████████████
 
 ### 💡 Features bonus (backlog post-ECF)
 
-- [ ] Messagerie temps réel WebSockets
+- [x] ~~Messagerie temps réel WebSockets~~ ✅ **IMPLÉMENTÉ 10 février 2026**
 - [ ] Notifications temps réel
 - [ ] Mode sombre
 - [ ] Export PDF des prêts
@@ -686,4 +686,3 @@ Phase 7 : Documentation         ████████████████
 ```
 
 ---
-
