@@ -6,6 +6,20 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreItemRequest extends FormRequest
 {
+    public function validated($key = null, $default = null)
+    {
+        $data = parent::validated($key, $default);
+
+        // Nettoyer le contenu HTML
+        if (isset($data['content'])) {
+            $data['content'] = strip_tags($data['content']);
+            // OU si tu veux garder certaines balises :
+            // $data['content'] = strip_tags($data['content'], '<b><i><u>');
+        }
+
+        return $data;
+    }
+    
     public function authorize(): bool
     {
         return true;
